@@ -5,4 +5,8 @@
     <Project Path="src/FurnitureEcommerce.Domain/FurnitureEcommerce.Domain.csproj" />
     <Project Path="src/FurnitureEcommerce.Infrastructure/FurnitureEcommerce.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FurnitureEcommerce.IntegrationTests/FurnitureEcommerce.IntegrationTests.csproj" />
+    <Project Path="tests/FurnitureEcommerce.UnitTests/FurnitureEcommerce.UnitTests.csproj" />
+  </Folder>
 </Solution>

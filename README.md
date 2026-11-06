@@ -52,3 +52,13 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download) and Docker.
 The API runs at `http://localhost:5068`, and the interactive API reference is at `http://localhost:5068/scalar`.
 
 To stop PostgreSQL, run `docker compose down` from the project root. Your data is kept.
+
+## Running the tests
+
+From the `backend` folder:
+
+```shell
+dotnet test FurnitureEcommerce.slnx
+```
+
+Docker must be running. The integration tests start their own temporary PostgreSQL container, so they do not touch your local database.
