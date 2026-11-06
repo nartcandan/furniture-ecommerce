@@ -1,5 +1,6 @@
 using FluentValidation;
 using FurnitureEcommerce.Application.Categories;
+using FurnitureEcommerce.Application.Products;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FurnitureEcommerce.Application;
@@ -10,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IProductService, ProductService>();
 
         return services;
     }

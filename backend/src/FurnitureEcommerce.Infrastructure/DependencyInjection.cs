@@ -1,4 +1,5 @@
 using FurnitureEcommerce.Application.Categories;
+using FurnitureEcommerce.Application.Products;
 using FurnitureEcommerce.Infrastructure.Persistence;
 using FurnitureEcommerce.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,7 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
 
         return services;
     }
