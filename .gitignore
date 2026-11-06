@@ -1,0 +1,30 @@
+# Local working notes
+PLAN.md
+
+# .NET
+bin/
+obj/
+*.user
+TestResults/
+coverage/
+
+# Node
+node_modules/
+dist/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+
+# Uploaded product images
+backend/src/FurnitureEcommerce.Api/wwwroot/uploads/
+
+# IDE and OS
+.vs/
+.vscode/
+.idea/
+.claude/
+Thumbs.db
+.DS_Store
