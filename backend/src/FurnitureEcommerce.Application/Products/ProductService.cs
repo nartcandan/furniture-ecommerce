@@ -9,6 +9,7 @@ namespace FurnitureEcommerce.Application.Products;
 public class ProductService(
     IProductRepository repository,
     ICategoryRepository categoryRepository,
+    IFileStorage fileStorage,
     IValidator<ProductQuery> queryValidator,
     IValidator<CreateProductRequest> createValidator,
     IValidator<UpdateProductRequest> updateValidator,
@@ -139,7 +140,7 @@ public class ProductService(
             ?? throw new NotFoundException($"Category '{id}' was not found.");
     }
 
-    private static ProductResponse ToResponse(Product product) => new(
+    private ProductResponse ToResponse(Product product) => new(
         product.Id,
         product.Category.Id,
         product.Category.Name,
@@ -155,5 +156,13 @@ public class ProductService(
         product.WeightKg,
         product.Material,
         product.Color,
-        product.IsActive);
+        product.IsActive,
+        product.Images
+            .OrderBy(image => image.SortOrder)
+            .Select(image => new ProductImageResponse(
+                image.Id,
+                fileStorage.GetUrl(image.ImagePath),
+                image.AltText,
+                image.SortOrder))
+            .ToList());
 }

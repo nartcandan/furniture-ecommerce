@@ -16,7 +16,12 @@ public record ProductResponse(
     decimal? WeightKg,
     string? Material,
     string? Color,
-    bool IsActive);
+    bool IsActive,
+    List<ProductImageResponse> Images);
+
+public record ProductImageResponse(Guid Id, string Url, string? AltText, int SortOrder);
+
+public record ReorderProductImagesRequest(List<Guid> ImageIds);
 
 public interface IProductRequest
 {

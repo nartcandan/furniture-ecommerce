@@ -16,6 +16,9 @@ public interface IProductRepository
     /// <exception cref="Common.Exceptions.ConflictException">The category was removed.</exception>
     Task UpdateAsync(Product product, CancellationToken cancellationToken);
 
+    Task AddImageAsync(ProductImage image, CancellationToken cancellationToken);
+    Task DeleteImageAsync(ProductImage image, CancellationToken cancellationToken);
+
     /// <summary>Atomically adds the change to the stock unless the result would be negative.</summary>
     /// <returns>True if the stock was changed.</returns>
     Task<bool> TryAdjustStockAsync(Guid id, int change, CancellationToken cancellationToken);

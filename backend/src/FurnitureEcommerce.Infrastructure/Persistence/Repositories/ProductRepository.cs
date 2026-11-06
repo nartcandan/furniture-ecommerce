@@ -38,7 +38,11 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
 
         var totalCount = await products.CountAsync(cancellationToken);
 
-        var items = await ApplySort(products, query.Sort)
+        // Lists show only the main image, which is the one with the lowest sort order.
+        var productsWithMainImage = products
+            .Include(product => product.Images.OrderBy(image => image.SortOrder).Take(1));
+
+        var items = await ApplySort(productsWithMainImage, query.Sort)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
@@ -49,6 +53,7 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
     public Task<Product?> GetActiveBySlugAsync(string slug, CancellationToken cancellationToken)
     {
         return ActiveProducts()
+            .Include(product => product.Images)
             .FirstOrDefaultAsync(product => product.Slug == slug, cancellationToken);
     }
 
@@ -56,6 +61,7 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
     {
         return dbContext.Products
             .Include(product => product.Category)
+            .Include(product => product.Images)
             .FirstOrDefaultAsync(product => product.Id == id, cancellationToken);
     }
 
@@ -94,6 +100,18 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
         {
             throw new ConflictException("The selected category no longer exists.");
         }
+    }
+
+    public Task AddImageAsync(ProductImage image, CancellationToken cancellationToken)
+    {
+        dbContext.ProductImages.Add(image);
+        return dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public Task DeleteImageAsync(ProductImage image, CancellationToken cancellationToken)
+    {
+        dbContext.ProductImages.Remove(image);
+        return dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<bool> TryAdjustStockAsync(Guid id, int change, CancellationToken cancellationToken)

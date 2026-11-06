@@ -20,4 +20,5 @@ public class Product
     public DateTime? UpdatedAt { get; set; }
 
     public Category Category { get; set; } = null!;
+    public ICollection<ProductImage> Images { get; set; } = [];
 }
