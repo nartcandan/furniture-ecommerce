@@ -5,7 +5,7 @@ namespace FurnitureEcommerce.Api.Controllers;
 
 [ApiController]
 [Route("api/categories")]
-public class CategoriesController(CategoryService categoryService) : ControllerBase
+public class CategoriesController(ICategoryService categoryService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<List<CategoryResponse>>> GetAll(CancellationToken cancellationToken)

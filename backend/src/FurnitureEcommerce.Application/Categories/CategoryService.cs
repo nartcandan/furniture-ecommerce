@@ -8,7 +8,7 @@ namespace FurnitureEcommerce.Application.Categories;
 public class CategoryService(
     ICategoryRepository repository,
     IValidator<CreateCategoryRequest> createValidator,
-    IValidator<UpdateCategoryRequest> updateValidator)
+    IValidator<UpdateCategoryRequest> updateValidator) : ICategoryService
 {
     public async Task<List<CategoryResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
