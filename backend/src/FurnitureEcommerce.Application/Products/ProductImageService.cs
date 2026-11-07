@@ -85,7 +85,7 @@ public class ProductImageService(
 
         var currentIds = product.Images.Select(image => image.Id).Order();
 
-        if (!currentIds.SequenceEqual(request.ImageIds.Order()))
+        if (request.ImageIds is null || !currentIds.SequenceEqual(request.ImageIds.Order()))
         {
             throw ValidationError("ImageIds", "The list must contain every image of the product exactly once.");
         }

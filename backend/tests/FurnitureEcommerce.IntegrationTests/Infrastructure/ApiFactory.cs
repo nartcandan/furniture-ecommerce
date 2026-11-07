@@ -15,6 +15,7 @@ namespace FurnitureEcommerce.IntegrationTests.Infrastructure;
 public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestJwtIssuer = "furniture-tests";
+    public const string TestJwtSigningKey = "integration-tests-signing-key-of-at-least-32-bytes";
     public const string AdminEmail = "admin@example.com";
     public const string AdminPassword = "AdminPass123";
 
@@ -32,7 +33,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("FileStorage:BaseUrl", "http://localhost/uploads");
         builder.UseSetting("Jwt:Issuer", TestJwtIssuer);
         builder.UseSetting("Jwt:Audience", TestJwtIssuer);
-        builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-of-at-least-32-bytes");
+        builder.UseSetting("Jwt:SigningKey", TestJwtSigningKey);
         builder.UseSetting("Jwt:ExpiryMinutes", "60");
         builder.UseSetting("AdminUser:Email", AdminEmail);
         builder.UseSetting("AdminUser:Password", AdminPassword);

@@ -16,10 +16,10 @@ public class AuthTests(ApiFactory factory) : ApiTestBase(factory)
         new("Ayse", "Yilmaz", email, password);
 
     private Task<HttpResponseMessage> RegisterAsync(RegisterRequest request) =>
-        Client.PostAsJsonAsync("/api/auth/register", request);
+        AnonymousClient.PostAsJsonAsync("/api/auth/register", request);
 
     private Task<HttpResponseMessage> LoginAsync(string email = Email, string password = Password) =>
-        Client.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password));
+        AnonymousClient.PostAsJsonAsync("/api/auth/login", new LoginRequest(email, password));
 
     [Fact]
     public async Task Register_ReturnsUserAndToken()

@@ -1,9 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Products;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FurnitureEcommerce.Api.Controllers;
 
 [ApiController]
+[Authorize(Roles = Roles.Admin)]
 [Route("api/products/{productId:guid}/images")]
 public class ProductImagesController(IProductImageService productImageService) : ControllerBase
 {
@@ -15,7 +19,7 @@ public class ProductImagesController(IProductImageService productImageService) :
     [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestSizeInBytes)]
     public async Task<ActionResult<ProductImageResponse>> Add(
         Guid productId,
-        IFormFile file,
+        [Required] IFormFile file,
         [FromForm] string? altText,
         CancellationToken cancellationToken)
     {

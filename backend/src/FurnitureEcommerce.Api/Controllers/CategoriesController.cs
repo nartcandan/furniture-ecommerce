@@ -1,4 +1,6 @@
+using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Categories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FurnitureEcommerce.Api.Controllers;
@@ -21,6 +23,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return await categoryService.GetBySlugAsync(slug, cancellationToken);
     }
 
+    [Authorize(Roles = Roles.Admin)]
     [HttpPost]
     public async Task<ActionResult<CategoryResponse>> Create(
         CreateCategoryRequest request,
@@ -30,6 +33,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return CreatedAtAction(nameof(GetBySlug), new { slug = category.Slug }, category);
     }
 
+    [Authorize(Roles = Roles.Admin)]
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<CategoryResponse>> Update(
         Guid id,
@@ -39,6 +43,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return await categoryService.UpdateAsync(id, request, cancellationToken);
     }
 
+    [Authorize(Roles = Roles.Admin)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {

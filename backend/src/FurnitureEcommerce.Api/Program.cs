@@ -1,4 +1,5 @@
 using FurnitureEcommerce.Api.ExceptionHandling;
+using FurnitureEcommerce.Api.OpenApi;
 using FurnitureEcommerce.Application;
 using FurnitureEcommerce.Infrastructure;
 using FurnitureEcommerce.Infrastructure.Identity;
@@ -23,7 +24,11 @@ builder.Services
     // Parser messages contain internal type names and must not reach clients.
     .AddJsonOptions(options => options.AllowInputFormatterExceptionMessages = false);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecurityTransformer>();
+    options.AddOperationTransformer<BearerSecurityTransformer>();
+});
 
 var app = builder.Build();
 
@@ -34,11 +39,14 @@ using (var scope = app.Services.CreateScope())
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+// Gives empty 401 and 403 responses the same ProblemDetails body as other errors.
+app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options =>
+        options.AddPreferredSecuritySchemes(BearerSecurityTransformer.SchemeName));
 }
 
 app.UseHttpsRedirection();
@@ -51,6 +59,7 @@ app.UseStaticFiles(new StaticFileOptions
         context.Context.Response.Headers.XContentTypeOptions = "nosniff"
 });
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

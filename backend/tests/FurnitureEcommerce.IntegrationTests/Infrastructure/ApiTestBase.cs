@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Products;
 
@@ -11,9 +13,23 @@ public abstract class ApiTestBase(ApiFactory factory) : IAsyncLifetime
         [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0, 0, 0, 0, 0];
 
     protected ApiFactory Factory { get; } = factory;
+
+    /// <summary>Sends the admin token, because catalog writes require it.</summary>
     protected HttpClient Client { get; } = factory.CreateClient();
 
-    public Task InitializeAsync() => Factory.ResetDatabaseAsync();
+    protected HttpClient AnonymousClient { get; } = factory.CreateClient();
+
+    public async Task InitializeAsync()
+    {
+        await Factory.ResetDatabaseAsync();
+
+        var response = await AnonymousClient.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(ApiFactory.AdminEmail, ApiFactory.AdminPassword));
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth!.AccessToken);
+    }
 
     public Task DisposeAsync() => Task.CompletedTask;
 

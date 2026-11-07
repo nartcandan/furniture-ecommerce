@@ -1,5 +1,7 @@
+using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Products;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FurnitureEcommerce.Api.Controllers;
@@ -24,6 +26,7 @@ public class ProductsController(IProductService productService) : ControllerBase
         return await productService.GetBySlugAsync(slug, cancellationToken);
     }
 
+    [Authorize(Roles = Roles.Admin)]
     [HttpPost]
     public async Task<ActionResult<ProductResponse>> Create(
         CreateProductRequest request,
@@ -33,6 +36,7 @@ public class ProductsController(IProductService productService) : ControllerBase
         return CreatedAtAction(nameof(GetBySlug), new { slug = product.Slug }, product);
     }
 
+    [Authorize(Roles = Roles.Admin)]
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<ProductResponse>> Update(
         Guid id,
@@ -42,6 +46,7 @@ public class ProductsController(IProductService productService) : ControllerBase
         return await productService.UpdateAsync(id, request, cancellationToken);
     }
 
+    [Authorize(Roles = Roles.Admin)]
     [HttpPatch("{id:guid}/stock")]
     public async Task<ActionResult<ProductResponse>> AdjustStock(
         Guid id,
@@ -51,6 +56,7 @@ public class ProductsController(IProductService productService) : ControllerBase
         return await productService.AdjustStockAsync(id, request, cancellationToken);
     }
 
+    [Authorize(Roles = Roles.Admin)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {

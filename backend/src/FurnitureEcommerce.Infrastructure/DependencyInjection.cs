@@ -1,3 +1,4 @@
+using System.Text;
 using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Common;
@@ -6,11 +7,14 @@ using FurnitureEcommerce.Infrastructure.Identity;
 using FurnitureEcommerce.Infrastructure.Persistence;
 using FurnitureEcommerce.Infrastructure.Persistence.Repositories;
 using FurnitureEcommerce.Infrastructure.Storage;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 
 namespace FurnitureEcommerce.Infrastructure;
 
@@ -48,6 +52,26 @@ public static class DependencyInjection
         services.AddSingleton(jwtOptions);
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                // Keeps claim names as they are in the token, such as "sub" and "role".
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+                    ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                    RoleClaimType = JwtTokenService.RoleClaimType,
+                    NameClaimType = JwtRegisteredClaimNames.Sub,
+                    // The token ends exactly at its expiry time, without the default 5 extra minutes.
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+        services.AddAuthorization();
 
         services.AddSingleton(
             configuration.GetSection(AdminUserOptions.SectionName).Get<AdminUserOptions>() ?? new AdminUserOptions());

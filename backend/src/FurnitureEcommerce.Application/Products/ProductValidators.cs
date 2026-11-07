@@ -11,6 +11,7 @@ public abstract class ProductRequestValidator<T> : AbstractValidator<T>
         RuleFor(request => request.CategoryId).NotEmpty();
 
         RuleFor(request => request.Name)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .MaximumLength(200)
             .Must(name => SlugGenerator.Generate(name).Length > 0)

@@ -8,7 +8,7 @@ namespace FurnitureEcommerce.Infrastructure.Identity;
 
 public class JwtTokenService(JwtOptions options) : ITokenService
 {
-    private const string RoleClaimType = "role";
+    public const string RoleClaimType = "role";
 
     private readonly JsonWebTokenHandler tokenHandler = new();
     private readonly SigningCredentials signingCredentials = new(

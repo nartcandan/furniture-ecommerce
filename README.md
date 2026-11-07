@@ -2,7 +2,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** In development. The catalog API (categories, products, stock, and product images) works. Authentication, cart, checkout, and the frontend are not built yet, so the catalog write endpoints are currently unprotected.
+> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. The cart, checkout, and the frontend are not built yet.
 
 ## Tech stack
 

@@ -8,6 +8,7 @@ public class CreateCategoryRequestValidator : AbstractValidator<CreateCategoryRe
     public CreateCategoryRequestValidator()
     {
         RuleFor(request => request.Name)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .MaximumLength(100)
             .Must(name => SlugGenerator.Generate(name).Length > 0)
