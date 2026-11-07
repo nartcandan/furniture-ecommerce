@@ -1,9 +1,11 @@
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Products;
+using FurnitureEcommerce.Infrastructure.Identity;
 using FurnitureEcommerce.Infrastructure.Persistence;
 using FurnitureEcommerce.Infrastructure.Persistence.Repositories;
 using FurnitureEcommerce.Infrastructure.Storage;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +28,15 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("'FileStorage:BaseUrl' is not configured.");
 
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+        services
+            .AddIdentityCore<ApplicationUser>(options =>
+            {
+                options.User.RequireUniqueEmail = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireNonAlphanumeric = false;
+            })
+            .AddRoles<IdentityRole<Guid>>()
+            .AddEntityFrameworkStores<AppDbContext>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddSingleton<IFileStorage>(provider => new LocalFileStorage(
