@@ -21,19 +21,30 @@ public class ProductService(
     {
         await queryValidator.ValidateAndThrowAsync(query, cancellationToken);
 
-        var products = await repository.GetActivePagedAsync(query, cancellationToken);
+        return ToPagedResponse(await repository.GetActivePagedAsync(query, cancellationToken));
+    }
 
-        return new PagedResult<ProductResponse>(
-            products.Items.Select(ToResponse).ToList(),
-            products.Page,
-            products.PageSize,
-            products.TotalCount);
+    public async Task<PagedResult<ProductResponse>> GetAllPagedAsync(
+        ProductQuery query,
+        CancellationToken cancellationToken)
+    {
+        await queryValidator.ValidateAndThrowAsync(query, cancellationToken);
+
+        return ToPagedResponse(await repository.GetAllPagedAsync(query, cancellationToken));
     }
 
     public async Task<ProductResponse> GetBySlugAsync(string slug, CancellationToken cancellationToken)
     {
         var product = await repository.GetActiveBySlugAsync(slug, cancellationToken)
             ?? throw new NotFoundException($"Product '{slug}' was not found.");
+
+        return ToResponse(product);
+    }
+
+    public async Task<ProductResponse> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var product = await repository.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException($"Product '{id}' was not found.");
 
         return ToResponse(product);
     }
@@ -138,6 +149,15 @@ public class ProductService(
     {
         return await categoryRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException($"Category '{id}' was not found.");
+    }
+
+    private PagedResult<ProductResponse> ToPagedResponse(PagedResult<Product> products)
+    {
+        return new PagedResult<ProductResponse>(
+            products.Items.Select(ToResponse).ToList(),
+            products.Page,
+            products.PageSize,
+            products.TotalCount);
     }
 
     private ProductResponse ToResponse(Product product) => new(

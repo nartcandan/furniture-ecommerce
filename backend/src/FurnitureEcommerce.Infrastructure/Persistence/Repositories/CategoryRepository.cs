@@ -16,17 +16,26 @@ public class CategoryRepository(AppDbContext dbContext) : ICategoryRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<List<Category>> GetActiveAsync(CancellationToken cancellationToken)
+    {
+        return dbContext.Categories
+            .AsNoTracking()
+            .Where(category => category.IsActive)
+            .OrderBy(category => category.Name)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return dbContext.Categories
             .FirstOrDefaultAsync(category => category.Id == id, cancellationToken);
     }
 
-    public Task<Category?> GetBySlugAsync(string slug, CancellationToken cancellationToken)
+    public Task<Category?> GetActiveBySlugAsync(string slug, CancellationToken cancellationToken)
     {
         return dbContext.Categories
             .AsNoTracking()
-            .FirstOrDefaultAsync(category => category.Slug == slug, cancellationToken);
+            .FirstOrDefaultAsync(category => category.IsActive && category.Slug == slug, cancellationToken);
     }
 
     public Task<bool> SlugExistsAsync(string slug, CancellationToken cancellationToken)

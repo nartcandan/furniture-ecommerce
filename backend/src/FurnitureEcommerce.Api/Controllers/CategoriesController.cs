@@ -12,7 +12,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
     [HttpGet]
     public async Task<ActionResult<List<CategoryResponse>>> GetAll(CancellationToken cancellationToken)
     {
-        return await categoryService.GetAllAsync(cancellationToken);
+        return await categoryService.GetActiveAsync(cancellationToken);
     }
 
     [HttpGet("{slug}")]

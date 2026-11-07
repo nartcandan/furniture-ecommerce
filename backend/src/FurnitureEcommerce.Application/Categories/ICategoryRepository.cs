@@ -5,8 +5,9 @@ namespace FurnitureEcommerce.Application.Categories;
 public interface ICategoryRepository
 {
     Task<List<Category>> GetAllAsync(CancellationToken cancellationToken);
+    Task<List<Category>> GetActiveAsync(CancellationToken cancellationToken);
     Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-    Task<Category?> GetBySlugAsync(string slug, CancellationToken cancellationToken);
+    Task<Category?> GetActiveBySlugAsync(string slug, CancellationToken cancellationToken);
     Task<bool> SlugExistsAsync(string slug, CancellationToken cancellationToken);
 
     /// <exception cref="Common.Exceptions.ConflictException">The slug is already in use.</exception>

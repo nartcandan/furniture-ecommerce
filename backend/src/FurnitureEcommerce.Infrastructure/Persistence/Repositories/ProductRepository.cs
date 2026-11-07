@@ -9,12 +9,29 @@ namespace FurnitureEcommerce.Infrastructure.Persistence.Repositories;
 
 public class ProductRepository(AppDbContext dbContext) : IProductRepository
 {
-    public async Task<PagedResult<Product>> GetActivePagedAsync(
+    public Task<PagedResult<Product>> GetActivePagedAsync(
         ProductQuery query,
         CancellationToken cancellationToken)
     {
-        var products = ActiveProducts();
+        return GetPagedAsync(ActiveProducts(), query, cancellationToken);
+    }
 
+    public Task<PagedResult<Product>> GetAllPagedAsync(
+        ProductQuery query,
+        CancellationToken cancellationToken)
+    {
+        var products = dbContext.Products
+            .AsNoTracking()
+            .Include(product => product.Category);
+
+        return GetPagedAsync(products, query, cancellationToken);
+    }
+
+    private static async Task<PagedResult<Product>> GetPagedAsync(
+        IQueryable<Product> products,
+        ProductQuery query,
+        CancellationToken cancellationToken)
+    {
         if (!string.IsNullOrWhiteSpace(query.Category))
         {
             products = products.Where(product => product.Category.Slug == query.Category);

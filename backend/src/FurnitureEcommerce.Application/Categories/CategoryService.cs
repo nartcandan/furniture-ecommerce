@@ -10,6 +10,12 @@ public class CategoryService(
     IValidator<CreateCategoryRequest> createValidator,
     IValidator<UpdateCategoryRequest> updateValidator) : ICategoryService
 {
+    public async Task<List<CategoryResponse>> GetActiveAsync(CancellationToken cancellationToken)
+    {
+        var categories = await repository.GetActiveAsync(cancellationToken);
+        return categories.Select(ToResponse).ToList();
+    }
+
     public async Task<List<CategoryResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
         var categories = await repository.GetAllAsync(cancellationToken);
@@ -18,7 +24,7 @@ public class CategoryService(
 
     public async Task<CategoryResponse> GetBySlugAsync(string slug, CancellationToken cancellationToken)
     {
-        var category = await repository.GetBySlugAsync(slug, cancellationToken)
+        var category = await repository.GetActiveBySlugAsync(slug, cancellationToken)
             ?? throw new NotFoundException($"Category '{slug}' was not found.");
 
         return ToResponse(category);
