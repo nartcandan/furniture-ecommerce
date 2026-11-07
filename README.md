@@ -56,6 +56,25 @@ The API runs at `http://localhost:5068`, and the interactive API reference is at
 
 To stop PostgreSQL, run `docker compose down` from the project root. Your data is kept.
 
+## Using the API
+
+Anyone can read the active catalog, register and log in. Catalog changes need the admin role.
+
+| Endpoints | Access |
+|---|---|
+| `POST /api/auth/register`, `POST /api/auth/login` | Public |
+| `GET /api/categories`, `GET /api/products` and their detail routes | Public, active records only |
+| `POST`, `PUT`, `PATCH`, `DELETE` on categories, products, stock and images | Admin |
+| `GET /api/admin/categories`, `GET /api/admin/products`, `GET /api/admin/products/{id}` | Admin, including inactive records |
+
+New accounts get the customer role. To make admin requests, log in with the admin account from step 3 and send the `accessToken` from the response in the `Authorization` header:
+
+```http
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+Tokens are valid for one hour. After that, log in again. An account is locked for five minutes after five failed login attempts.
+
 ## Running the tests
 
 From the `backend` folder:
