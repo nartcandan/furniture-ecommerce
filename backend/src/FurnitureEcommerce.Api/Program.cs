@@ -15,7 +15,12 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration, uploadsPath);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers(options =>
+        // Required fields are checked by FluentValidation, so a malformed body reports one error.
+        options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
+    // Parser messages contain internal type names and must not reach clients.
+    .AddJsonOptions(options => options.AllowInputFormatterExceptionMessages = false);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

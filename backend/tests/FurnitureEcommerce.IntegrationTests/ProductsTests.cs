@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Products;
@@ -66,6 +67,23 @@ public class ProductsTests(ApiFactory factory) : ApiTestBase(factory)
         var response = await Client.PostAsJsonAsync("/api/products", NewProduct(category.Id, price: -1));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("""{ "categoryId": "" }""")]
+    [InlineData("""{ "categoryId": """)]
+    public async Task Create_HidesParserDetails_ForMalformedBody(string body)
+    {
+        var response = await Client.PostAsync(
+            "/api/products",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.DoesNotContain("FurnitureEcommerce", content);
+        Assert.DoesNotContain("LineNumber", content);
+        Assert.DoesNotContain("\"request\"", content);
     }
 
     [Theory]
