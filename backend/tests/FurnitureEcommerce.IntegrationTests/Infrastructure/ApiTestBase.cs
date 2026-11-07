@@ -33,6 +33,20 @@ public abstract class ApiTestBase(ApiFactory factory) : IAsyncLifetime
 
     public Task DisposeAsync() => Task.CompletedTask;
 
+    /// <summary>Registers a new customer and returns a client that sends their token.</summary>
+    protected async Task<HttpClient> CreateCustomerClientAsync(string email = "ayse@example.com")
+    {
+        var response = await AnonymousClient.PostAsJsonAsync(
+            "/api/auth/register",
+            new RegisterRequest("Ayse", "Yilmaz", email, "Sifre1234"));
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+        var client = Factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth!.AccessToken);
+        return client;
+    }
+
     protected async Task<CategoryResponse> CreateCategoryAsync(string name = "Sofas")
     {
         var response = await Client.PostAsJsonAsync("/api/categories", new CreateCategoryRequest(name, null));

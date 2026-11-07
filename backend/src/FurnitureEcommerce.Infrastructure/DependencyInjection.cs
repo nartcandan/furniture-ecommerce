@@ -1,4 +1,5 @@
 using System.Text;
+using FurnitureEcommerce.Application.Addresses;
 using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Common;
@@ -76,6 +77,7 @@ public static class DependencyInjection
         services.AddSingleton(
             configuration.GetSection(AdminUserOptions.SectionName).Get<AdminUserOptions>() ?? new AdminUserOptions());
         services.AddScoped<AdminSeeder>();
+        services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddSingleton<IFileStorage>(provider => new LocalFileStorage(

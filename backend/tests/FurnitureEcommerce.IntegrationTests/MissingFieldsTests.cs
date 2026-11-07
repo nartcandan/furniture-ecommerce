@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
+using FurnitureEcommerce.Application.Addresses;
 using FurnitureEcommerce.IntegrationTests.Infrastructure;
 
 namespace FurnitureEcommerce.IntegrationTests;
@@ -15,6 +17,7 @@ public class MissingFieldsTests(ApiFactory factory) : ApiTestBase(factory)
     [InlineData("POST", "/api/auth/login")]
     [InlineData("POST", "/api/categories")]
     [InlineData("POST", "/api/products")]
+    [InlineData("POST", "/api/addresses")]
     public async Task Create_ReturnsBadRequest_ForEmptyBody(string method, string path)
     {
         var response = await Client.SendAsync(
@@ -40,6 +43,19 @@ public class MissingFieldsTests(ApiFactory factory) : ApiTestBase(factory)
         var product = await CreateProductAsync(category.Id);
 
         var response = await Client.PutAsync($"/api/products/{product.Id}", EmptyJson());
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateAddress_ReturnsBadRequest_ForEmptyBody()
+    {
+        var create = await Client.PostAsJsonAsync(
+            "/api/addresses",
+            new AddressRequest("Home", "Ayse", "Yilmaz", "05551112233", "Istanbul", "Kadikoy", "Moda Cd. 1", null));
+        var address = await create.Content.ReadFromJsonAsync<AddressResponse>();
+
+        var response = await Client.PutAsync($"/api/addresses/{address!.Id}", EmptyJson());
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

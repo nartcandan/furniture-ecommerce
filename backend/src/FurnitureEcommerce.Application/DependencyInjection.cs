@@ -1,4 +1,5 @@
 using FluentValidation;
+using FurnitureEcommerce.Application.Addresses;
 using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Products;
@@ -11,6 +12,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        services.AddScoped<IAddressService, AddressService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IProductService, ProductService>();
