@@ -18,7 +18,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         // Identity maps its own tables here, so this call must come first.
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<IdentityRole<Guid>>().ToTable("Roles");
         modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
         modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
         modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");

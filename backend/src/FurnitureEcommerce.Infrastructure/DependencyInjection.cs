@@ -48,6 +48,10 @@ public static class DependencyInjection
         services.AddSingleton(jwtOptions);
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IIdentityService, IdentityService>();
+
+        services.AddSingleton(
+            configuration.GetSection(AdminUserOptions.SectionName).Get<AdminUserOptions>() ?? new AdminUserOptions());
+        services.AddScoped<AdminSeeder>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddSingleton<IFileStorage>(provider => new LocalFileStorage(

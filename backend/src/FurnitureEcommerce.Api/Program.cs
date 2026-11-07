@@ -1,6 +1,7 @@
 using FurnitureEcommerce.Api.ExceptionHandling;
 using FurnitureEcommerce.Application;
 using FurnitureEcommerce.Infrastructure;
+using FurnitureEcommerce.Infrastructure.Identity;
 using Microsoft.Extensions.FileProviders;
 using Scalar.AspNetCore;
 
@@ -25,6 +26,11 @@ builder.Services
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider.GetRequiredService<AdminSeeder>().SeedAsync();
+}
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();

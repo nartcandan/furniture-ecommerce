@@ -1,3 +1,4 @@
+using FurnitureEcommerce.Infrastructure.Identity;
 using FurnitureEcommerce.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -14,6 +15,8 @@ namespace FurnitureEcommerce.IntegrationTests.Infrastructure;
 public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestJwtIssuer = "furniture-tests";
+    public const string AdminEmail = "admin@example.com";
+    public const string AdminPassword = "AdminPass123";
 
     private readonly PostgreSqlContainer database = new PostgreSqlBuilder("postgres:18-alpine").Build();
     private readonly string contentRoot = Path.Combine(Path.GetTempPath(), $"furniture-tests-{Guid.NewGuid():N}");
@@ -31,6 +34,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Jwt:Audience", TestJwtIssuer);
         builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-of-at-least-32-bytes");
         builder.UseSetting("Jwt:ExpiryMinutes", "60");
+        builder.UseSetting("AdminUser:Email", AdminEmail);
+        builder.UseSetting("AdminUser:Password", AdminPassword);
     }
 
     public async Task InitializeAsync()
@@ -38,20 +43,25 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         Directory.CreateDirectory(contentRoot);
         await database.StartAsync();
 
-        using (var scope = Services.CreateScope())
+        // The API seeds the admin while it starts, so the tables must exist before that.
+        var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql(database.GetConnectionString())
+            .Options;
+
+        await using (var dbContext = new AppDbContext(dbContextOptions))
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await dbContext.Database.MigrateAsync();
         }
 
         await using var connection = new NpgsqlConnection(database.GetConnectionString());
         await connection.OpenAsync();
 
+        // Roles come from a migration, so a reset must keep them.
         respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
         {
             DbAdapter = DbAdapter.Postgres,
             SchemasToInclude = ["public"],
-            TablesToIgnore = [new Table("__EFMigrationsHistory")]
+            TablesToIgnore = [new Table("__EFMigrationsHistory"), new Table("Roles")]
         });
     }
 
@@ -60,6 +70,14 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await using var connection = new NpgsqlConnection(database.GetConnectionString());
         await connection.OpenAsync();
         await respawner.ResetAsync(connection);
+
+        await SeedAdminAsync();
+    }
+
+    public async Task SeedAdminAsync()
+    {
+        using var scope = Services.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<AdminSeeder>().SeedAsync();
     }
 
     async Task IAsyncLifetime.DisposeAsync()

@@ -270,6 +270,22 @@ namespace FurnitureEcommerce.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("Roles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("019a5c10-0000-7000-8000-000000000001"),
+                            ConcurrencyStamp = "019a5c10-0000-7000-8000-0000000000a1",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("019a5c10-0000-7000-8000-000000000002"),
+                            ConcurrencyStamp = "019a5c10-0000-7000-8000-0000000000a2",
+                            Name = "Customer",
+                            NormalizedName = "CUSTOMER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

@@ -170,5 +170,57 @@ public class AuthTests(ApiFactory factory) : ApiTestBase(factory)
         }
     }
 
+    [Fact]
+    public async Task Register_AssignsOnlyCustomerRole()
+    {
+        var response = await RegisterAsync(NewRegistration());
+
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+        Assert.Equal([Roles.Customer], RolesOf(auth!));
+    }
+
+    [Fact]
+    public async Task Login_ReturnsCustomerRole_ForRegisteredUser()
+    {
+        await RegisterAsync(NewRegistration());
+
+        var response = await LoginAsync();
+
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+        Assert.Equal([Roles.Customer], RolesOf(auth!));
+    }
+
+    [Fact]
+    public async Task Login_ReturnsAdminRole_ForSeededAdmin()
+    {
+        var response = await LoginAsync(ApiFactory.AdminEmail, ApiFactory.AdminPassword);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+        Assert.Equal([Roles.Admin], RolesOf(auth!));
+    }
+
+    [Fact]
+    public async Task AdminSeeder_CanRunAgain_WithoutChangingTheAccount()
+    {
+        await Factory.SeedAdminAsync();
+
+        var response = await LoginAsync(ApiFactory.AdminEmail, ApiFactory.AdminPassword);
+
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+        Assert.Equal([Roles.Admin], RolesOf(auth!));
+    }
+
+    private static string[] RolesOf(AuthResponse auth) =>
+        new JsonWebTokenHandler().ReadJsonWebToken(auth.AccessToken).Claims
+            .Where(claim => claim.Type == "role")
+            .Select(claim => claim.Value)
+            .ToArray();
+
     private record ProblemBody(string? Detail);
 }

@@ -2,13 +2,16 @@ using FluentValidation;
 using FluentValidation.Results;
 using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Common.Exceptions;
+using FurnitureEcommerce.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace FurnitureEcommerce.Infrastructure.Identity;
 
-public class IdentityService(UserManager<ApplicationUser> userManager) : IIdentityService
+public class IdentityService(
+    UserManager<ApplicationUser> userManager,
+    AppDbContext dbContext) : IIdentityService
 {
     private const string EmailTakenMessage = "This email address is already registered.";
 
@@ -22,6 +25,9 @@ public class IdentityService(UserManager<ApplicationUser> userManager) : IIdenti
             FirstName = newUser.FirstName,
             LastName = newUser.LastName
         };
+
+        // One transaction, so a failed role assignment does not leave a user without a role.
+        await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
         IdentityResult result;
 
@@ -39,6 +45,15 @@ public class IdentityService(UserManager<ApplicationUser> userManager) : IIdenti
         {
             ThrowForErrors(result.Errors);
         }
+
+        var roleResult = await userManager.AddToRoleAsync(user, Roles.Customer);
+
+        if (!roleResult.Succeeded)
+        {
+            throw new InvalidOperationException($"The '{Roles.Customer}' role could not be assigned.");
+        }
+
+        await transaction.CommitAsync();
 
         return await ToAuthUserAsync(user);
     }
