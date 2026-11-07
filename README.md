@@ -28,11 +28,12 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download) and Docker.
    docker compose up -d --wait
    ```
 
-3. From the `backend` folder, store the connection string with [User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets), using the password from `.env`:
+3. From the `backend` folder, store the connection string and the JWT signing key with [User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets). Use the password from `.env`, and a random signing key of at least 32 characters:
 
    ```shell
    cd backend
    dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=127.0.0.1;Port=5433;Database=furniture_ecommerce;Username=furniture_app;Password=YOUR_PASSWORD" --project src/FurnitureEcommerce.Api
+   dotnet user-secrets set "Jwt:SigningKey" "YOUR_RANDOM_SIGNING_KEY" --project src/FurnitureEcommerce.Api
    ```
 
 4. Create the database tables:

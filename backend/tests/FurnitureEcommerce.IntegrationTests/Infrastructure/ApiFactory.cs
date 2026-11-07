@@ -13,6 +13,8 @@ namespace FurnitureEcommerce.IntegrationTests.Infrastructure;
 /// <summary>Runs the API in memory against a temporary PostgreSQL container.</summary>
 public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    public const string TestJwtIssuer = "furniture-tests";
+
     private readonly PostgreSqlContainer database = new PostgreSqlBuilder("postgres:18-alpine").Build();
     private readonly string contentRoot = Path.Combine(Path.GetTempPath(), $"furniture-tests-{Guid.NewGuid():N}");
     private Respawner respawner = null!;
@@ -25,6 +27,10 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseContentRoot(contentRoot);
         builder.UseSetting("ConnectionStrings:DefaultConnection", database.GetConnectionString());
         builder.UseSetting("FileStorage:BaseUrl", "http://localhost/uploads");
+        builder.UseSetting("Jwt:Issuer", TestJwtIssuer);
+        builder.UseSetting("Jwt:Audience", TestJwtIssuer);
+        builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-of-at-least-32-bytes");
+        builder.UseSetting("Jwt:ExpiryMinutes", "60");
     }
 
     public async Task InitializeAsync()

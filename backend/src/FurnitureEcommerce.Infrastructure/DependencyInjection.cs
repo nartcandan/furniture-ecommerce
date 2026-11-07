@@ -1,3 +1,4 @@
+using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Products;
@@ -32,11 +33,21 @@ public static class DependencyInjection
             .AddIdentityCore<ApplicationUser>(options =>
             {
                 options.User.RequireUniqueEmail = true;
+                // UserName holds the email, so it must accept every character an email can have.
+                options.User.AllowedUserNameCharacters = string.Empty;
                 options.Password.RequiredLength = 8;
                 options.Password.RequireNonAlphanumeric = false;
             })
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<AppDbContext>();
+
+        var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+            ?? throw new InvalidOperationException("'Jwt' settings are not configured.");
+        jwtOptions.Validate();
+
+        services.AddSingleton(jwtOptions);
+        services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddSingleton<IFileStorage>(provider => new LocalFileStorage(

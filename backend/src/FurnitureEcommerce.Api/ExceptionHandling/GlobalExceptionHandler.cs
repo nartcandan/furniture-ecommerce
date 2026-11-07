@@ -20,6 +20,12 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
                 Title = "Resource not found",
                 Detail = exception.Message
             },
+            UnauthorizedException => new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Detail = exception.Message
+            },
             ConflictException => new ProblemDetails
             {
                 Status = StatusCodes.Status409Conflict,
