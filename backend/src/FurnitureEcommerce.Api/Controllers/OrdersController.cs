@@ -26,13 +26,18 @@ public class OrdersController(IOrderService orderService) : ControllerBase
     /// <summary>
     /// Creates an order from the cart and takes its items out of stock.
     /// The order waits for payment, and the cart is kept until the order is paid.
+    /// Send the customer to <c>paymentPageUrl</c> from the response to pay.
     /// </summary>
     [HttpPost]
     public async Task<ActionResult<OrderResponse>> Create(
         CreateOrderRequest request,
         CancellationToken cancellationToken)
     {
-        var order = await orderService.CreateAsync(User.GetUserId(), request, cancellationToken);
+        var order = await orderService.CreateAsync(
+            User.GetUserId(),
+            request,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
     }
 }

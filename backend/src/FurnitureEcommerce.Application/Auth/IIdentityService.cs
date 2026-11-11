@@ -6,4 +6,6 @@ public interface IIdentityService
 
     /// <summary>Returns null when the email, the password or the account state does not allow a login.</summary>
     Task<AuthUser?> ValidateCredentialsAsync(string email, string password);
+
+    Task<AuthUser?> GetUserAsync(Guid id);
 }

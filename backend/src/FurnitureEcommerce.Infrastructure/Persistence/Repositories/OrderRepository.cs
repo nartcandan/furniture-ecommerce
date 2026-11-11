@@ -8,6 +8,9 @@ namespace FurnitureEcommerce.Infrastructure.Persistence.Repositories;
 
 public class OrderRepository(AppDbContext dbContext) : IOrderRepository
 {
+    // Matches the column size in OrderConfiguration.
+    private const int MaxPaymentErrorLength = 500;
+
     public async Task<Guid?> CreateAndReserveStockAsync(Order order, CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
@@ -56,6 +59,129 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
 
         await transaction.CommitAsync(cancellationToken);
         return null;
+    }
+
+    public Task SetPaymentTokenAsync(Guid orderId, string paymentToken, CancellationToken cancellationToken)
+    {
+        var updatedAt = DateTime.UtcNow;
+
+        return dbContext.Orders
+            .Where(order => order.Id == orderId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(order => order.PaymentToken, paymentToken)
+                    .SetProperty(order => order.UpdatedAt, updatedAt),
+                cancellationToken);
+    }
+
+    public Task<Order?> GetByPaymentTokenAsync(string paymentToken, CancellationToken cancellationToken)
+    {
+        return dbContext.Orders
+            .AsNoTracking()
+            .Include(order => order.Items)
+            .FirstOrDefaultAsync(order => order.PaymentToken == paymentToken, cancellationToken);
+    }
+
+    public async Task<bool> TryMarkPaidAsync(Guid orderId, string paymentId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+
+        // The status in the WHERE clause makes this safe against repeated and simultaneous callbacks:
+        // the database lets only one of them change the row.
+        var affectedRows = await dbContext.Orders
+            .Where(order => order.Id == orderId && order.Status == OrderStatus.PendingPayment)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(order => order.Status, OrderStatus.Paid)
+                    .SetProperty(order => order.PaymentId, paymentId)
+                    .SetProperty(order => order.PaidAt, now)
+                    .SetProperty(order => order.UpdatedAt, now),
+                cancellationToken);
+
+        if (affectedRows == 0)
+        {
+            return false;
+        }
+
+        var userId = await dbContext.Orders
+            .Where(order => order.Id == orderId)
+            .Select(order => order.UserId)
+            .FirstAsync(cancellationToken);
+
+        var items = await dbContext.OrderItems
+            .AsNoTracking()
+            .Where(item => item.OrderId == orderId)
+            .ToListAsync(cancellationToken);
+
+        // Only what was ordered leaves the cart. Anything added after the order stays.
+        foreach (var item in items)
+        {
+            var productId = item.ProductId;
+            var quantity = item.Quantity;
+
+            var cartItems = dbContext.CartItems
+                .Where(cartItem => cartItem.Cart.UserId == userId && cartItem.ProductId == productId);
+
+            // Delete first. In the other order, a reduced row could be deleted by mistake.
+            await cartItems
+                .Where(cartItem => cartItem.Quantity <= quantity)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await cartItems
+                .Where(cartItem => cartItem.Quantity > quantity)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(cartItem => cartItem.Quantity, cartItem => cartItem.Quantity - quantity),
+                    cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> TryMarkPaymentFailedAsync(Guid orderId, string error, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+        var storedError = error.Length > MaxPaymentErrorLength ? error[..MaxPaymentErrorLength] : error;
+
+        var affectedRows = await dbContext.Orders
+            .Where(order => order.Id == orderId && order.Status == OrderStatus.PendingPayment)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(order => order.Status, OrderStatus.PaymentFailed)
+                    .SetProperty(order => order.PaymentError, storedError)
+                    .SetProperty(order => order.UpdatedAt, now),
+                cancellationToken);
+
+        if (affectedRows == 0)
+        {
+            return false;
+        }
+
+        var items = await dbContext.OrderItems
+            .AsNoTracking()
+            .Where(item => item.OrderId == orderId)
+            .OrderBy(item => item.ProductId)
+            .ToListAsync(cancellationToken);
+
+        // The stock goes back exactly once, because only one call gets past the status check above.
+        foreach (var item in items)
+        {
+            var productId = item.ProductId;
+            var quantity = item.Quantity;
+
+            await dbContext.Products
+                .Where(product => product.Id == productId)
+                .ExecuteUpdateAsync(
+                    setters => setters
+                        .SetProperty(product => product.StockQuantity, product => product.StockQuantity + quantity)
+                        .SetProperty(product => product.UpdatedAt, now),
+                    cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return true;
     }
 
     public Task<List<Order>> GetByUserAsync(Guid userId, CancellationToken cancellationToken)

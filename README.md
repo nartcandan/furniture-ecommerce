@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart and turn the cart into an order. Payment and the frontend are not built yet, so orders stay in the `PendingPayment` status.
+> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart, turn the cart into an order and pay for it on iyzico's sandbox payment page. Order cancellation, admin order management, the clean-up of unpaid orders and the frontend are not built yet.
 
 ## Tech stack
 
@@ -30,7 +30,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download) and Docker.
    docker compose up -d --wait
    ```
 
-3. From the `backend` folder, store the connection string, the JWT signing key and the first admin account with [User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets). Use the password from `.env` and a random signing key of at least 32 characters. The admin password needs at least 8 characters with an uppercase letter, a lowercase letter and a digit. The API creates this admin account when it starts:
+3. From the `backend` folder, store the connection string, the JWT signing key, the first admin account and your iyzico sandbox keys with [User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets). Use the password from `.env` and a random signing key of at least 32 characters. The admin password needs at least 8 characters with an uppercase letter, a lowercase letter and a digit. The API creates this admin account when it starts. The iyzico keys come from a free [sandbox account](https://sandbox-merchant.iyzipay.com), and the API does not start without them:
 
    ```shell
    cd backend
@@ -38,6 +38,8 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download) and Docker.
    dotnet user-secrets set "Jwt:SigningKey" "YOUR_RANDOM_SIGNING_KEY" --project src/FurnitureEcommerce.Api
    dotnet user-secrets set "AdminUser:Email" "admin@example.com" --project src/FurnitureEcommerce.Api
    dotnet user-secrets set "AdminUser:Password" "YOUR_ADMIN_PASSWORD" --project src/FurnitureEcommerce.Api
+   dotnet user-secrets set "Iyzico:ApiKey" "YOUR_SANDBOX_API_KEY" --project src/FurnitureEcommerce.Api
+   dotnet user-secrets set "Iyzico:SecretKey" "YOUR_SANDBOX_SECRET_KEY" --project src/FurnitureEcommerce.Api
    ```
 
 4. Create the database tables:
@@ -71,6 +73,7 @@ Anyone can read the active catalog, register and log in. Addresses, the cart and
 | `GET`, `POST`, `PUT`, `DELETE` on `/api/addresses` | Signed-in user, own addresses only |
 | `GET /api/cart`, `POST /api/cart/items`, `PUT` and `DELETE /api/cart/items/{productId}`, `DELETE /api/cart` | Signed-in user, own cart only |
 | `POST /api/orders`, `GET /api/orders`, `GET /api/orders/{id}` | Signed-in user, own orders only |
+| `POST /api/payments/callback` | Called by the customer's browser when it returns from iyzico |
 
 New accounts get the customer role. To make signed-in requests, log in and send the `accessToken` from the response in the `Authorization` header. For admin requests, log in with the admin account from step 3:
 
@@ -95,7 +98,19 @@ Add a product with `POST /api/cart/items` and a body such as `{ "productId": "..
 - The order copies the address, the product names and the current prices, so later changes do not affect it.
 - The items are taken out of stock in the same transaction. If any item is unavailable or short of stock, the request is rejected with `409 Conflict` and no stock changes.
 - A customer can have only one order waiting for payment. A second request, such as a double click, gets `409 Conflict`.
-- The cart is kept. It will be emptied when the order is paid.
+- The cart is kept until the order is paid.
+
+### Payment
+
+The response of `POST /api/orders` contains `paymentPageUrl`, an iyzico payment page for that order. Open it in a browser and pay with one of iyzico's sandbox test cards, for example `5528790000000008` with any future expiry date and any CVC.
+
+- After the payment, iyzico sends the browser to `POST /api/payments/callback`. The API does not trust that request. It asks iyzico for the result and compares the paid amount with the order.
+- A successful payment sets the order to `Paid` and takes the ordered quantities out of the cart. A failed one sets it to `PaymentFailed` and puts the items back in stock.
+- The callback can arrive any number of times. Only the first one changes anything.
+- If money arrives for an order that is no longer waiting for payment, the payment is cancelled at iyzico right away.
+- At the end the browser is sent to `Frontend:BaseUrl` (`http://localhost:5173/orders/{id}?payment=success`). The frontend is not built yet, so the browser shows a connection error there. Check the result with `GET /api/orders/{id}`.
+
+The tests replace iyzico with a fake, so they need no keys and make no calls to iyzico.
 
 ## Running the tests
 

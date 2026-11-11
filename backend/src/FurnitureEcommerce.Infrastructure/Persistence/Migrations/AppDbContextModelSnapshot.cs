@@ -249,6 +249,9 @@ namespace FurnitureEcommerce.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PaymentToken")
+                        .IsUnique();
+
                     b.HasIndex("UserId", "CreatedAt");
 
                     b.HasIndex(new[] { "UserId" }, "IX_Orders_UserId_PendingPayment")

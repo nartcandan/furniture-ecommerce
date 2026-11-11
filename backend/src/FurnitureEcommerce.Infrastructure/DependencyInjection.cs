@@ -5,8 +5,10 @@ using FurnitureEcommerce.Application.Carts;
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Orders;
+using FurnitureEcommerce.Application.Payments;
 using FurnitureEcommerce.Application.Products;
 using FurnitureEcommerce.Infrastructure.Identity;
+using FurnitureEcommerce.Infrastructure.Payments;
 using FurnitureEcommerce.Infrastructure.Persistence;
 using FurnitureEcommerce.Infrastructure.Persistence.Repositories;
 using FurnitureEcommerce.Infrastructure.Storage;
@@ -84,6 +86,18 @@ public static class DependencyInjection
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        var iyzicoOptions = configuration.GetSection(IyzicoOptions.SectionName).Get<IyzicoOptions>()
+            ?? throw new InvalidOperationException("'Iyzico' settings are not configured.");
+        iyzicoOptions.Validate();
+
+        services.AddSingleton(iyzicoOptions);
+        services.AddSingleton<IPaymentGateway, IyzicoPaymentGateway>();
+        services.AddSingleton(new PaymentSettings(
+            configuration["Payments:CallbackUrl"]
+                ?? throw new InvalidOperationException("'Payments:CallbackUrl' is not configured."),
+            configuration["Frontend:BaseUrl"]
+                ?? throw new InvalidOperationException("'Frontend:BaseUrl' is not configured.")));
+
         services.AddSingleton<IFileStorage>(provider => new LocalFileStorage(
             uploadsPath,
             uploadsBaseUrl,

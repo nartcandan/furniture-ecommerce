@@ -78,6 +78,13 @@ public class IdentityService(
         return await ToAuthUserAsync(user);
     }
 
+    public async Task<AuthUser?> GetUserAsync(Guid id)
+    {
+        var user = await userManager.FindByIdAsync(id.ToString());
+
+        return user is null ? null : await ToAuthUserAsync(user);
+    }
+
     private static void ThrowForErrors(IEnumerable<IdentityError> errors)
     {
         var errorList = errors.ToList();

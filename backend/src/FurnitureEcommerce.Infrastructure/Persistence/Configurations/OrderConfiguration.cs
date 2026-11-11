@@ -33,6 +33,9 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .IsUnique()
             .HasFilter("\"Status\" = 'PendingPayment'");
 
+        // The payment callback finds the order by this token.
+        builder.HasIndex(order => order.PaymentToken).IsUnique();
+
         // For the order history, newest first.
         builder.HasIndex(order => new { order.UserId, order.CreatedAt });
 

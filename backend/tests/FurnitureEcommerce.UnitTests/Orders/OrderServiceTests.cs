@@ -1,8 +1,10 @@
 using FluentValidation;
 using FurnitureEcommerce.Application.Addresses;
+using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Carts;
 using FurnitureEcommerce.Application.Common.Exceptions;
 using FurnitureEcommerce.Application.Orders;
+using FurnitureEcommerce.Application.Payments;
 using FurnitureEcommerce.Domain.Entities;
 using NSubstitute;
 
@@ -15,6 +17,8 @@ public class OrderServiceTests
     private readonly IOrderRepository repository = Substitute.For<IOrderRepository>();
     private readonly ICartRepository cartRepository = Substitute.For<ICartRepository>();
     private readonly IAddressRepository addressRepository = Substitute.For<IAddressRepository>();
+    private readonly IIdentityService identityService = Substitute.For<IIdentityService>();
+    private readonly IPaymentGateway gateway = Substitute.For<IPaymentGateway>();
     private readonly OrderService service;
 
     private readonly Address address = new()
@@ -32,7 +36,19 @@ public class OrderServiceTests
 
     public OrderServiceTests()
     {
-        service = new OrderService(repository, cartRepository, addressRepository, new CreateOrderRequestValidator());
+        service = new OrderService(
+            repository,
+            cartRepository,
+            addressRepository,
+            identityService,
+            gateway,
+            new PaymentSettings("http://api/callback", "http://frontend"),
+            new CreateOrderRequestValidator());
+
+        identityService.GetUserAsync(UserId)
+            .Returns(new AuthUser(UserId, "ayse@example.com", "Ayse", "Yilmaz", [Roles.Customer]));
+        gateway.StartCheckoutAsync(Arg.Any<CheckoutRequest>(), Arg.Any<CancellationToken>())
+            .Returns(CheckoutStart.Started("token-1", "https://pay/token-1"));
 
         addressRepository.GetForUserAsync(address.Id, UserId, Arg.Any<CancellationToken>()).Returns(address);
         repository.CreateAndReserveStockAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>()).Returns((Guid?)null);
@@ -71,7 +87,7 @@ public class OrderServiceTests
     }
 
     private Task<OrderResponse> CreateAsync() =>
-        service.CreateAsync(UserId, new CreateOrderRequest(address.Id), CancellationToken.None);
+        service.CreateAsync(UserId, new CreateOrderRequest(address.Id), "10.0.0.1", CancellationToken.None);
 
     private Task AssertNothingSavedAsync() =>
         repository.DidNotReceiveWithAnyArgs().CreateAndReserveStockAsync(default!, default);
@@ -110,7 +126,7 @@ public class OrderServiceTests
             .Returns((Address?)null);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            service.CreateAsync(UserId, new CreateOrderRequest(otherAddressId), CancellationToken.None));
+            service.CreateAsync(UserId, new CreateOrderRequest(otherAddressId), null, CancellationToken.None));
 
         await AssertNothingSavedAsync();
     }
@@ -158,10 +174,53 @@ public class OrderServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_OpensPaymentPage_AndStoresItsToken()
+    {
+        CartContains((NewProduct(), 1));
+
+        var order = await CreateAsync();
+
+        Assert.Equal("https://pay/token-1", order.PaymentPageUrl);
+        await gateway.Received(1).StartCheckoutAsync(
+            Arg.Is<CheckoutRequest>(request =>
+                request.Order.Id == order.Id
+                && request.CallbackUrl == "http://api/callback"
+                && request.Buyer == new PaymentBuyer(UserId, "Ayse", "Yilmaz", "ayse@example.com", "10.0.0.1")),
+            Arg.Any<CancellationToken>());
+        await repository.Received(1).SetPaymentTokenAsync(order.Id, "token-1", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CreateAsync_ReleasesTheOrder_WhenPaymentPageCannotBeOpened()
+    {
+        CartContains((NewProduct(), 1));
+        gateway.StartCheckoutAsync(Arg.Any<CheckoutRequest>(), Arg.Any<CancellationToken>())
+            .Returns(CheckoutStart.Failed("Provider is down"));
+
+        await Assert.ThrowsAsync<PaymentGatewayException>(CreateAsync);
+
+        await repository.Received(1).TryMarkPaymentFailedAsync(
+            Arg.Any<Guid>(), "Provider is down", Arg.Any<CancellationToken>());
+        await repository.DidNotReceiveWithAnyArgs().SetPaymentTokenAsync(default, default!, default);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DoesNotCallProvider_WhenStockIsTakenWhileSaving()
+    {
+        var product = NewProduct();
+        CartContains((product, 1));
+        repository.CreateAndReserveStockAsync(Arg.Any<Order>(), Arg.Any<CancellationToken>()).Returns(product.Id);
+
+        await Assert.ThrowsAsync<ConflictException>(CreateAsync);
+
+        await gateway.DidNotReceiveWithAnyArgs().StartCheckoutAsync(default!, default);
+    }
+
+    [Fact]
     public async Task CreateAsync_ThrowsValidation_ForMissingAddressId()
     {
         await Assert.ThrowsAsync<ValidationException>(() =>
-            service.CreateAsync(UserId, new CreateOrderRequest(Guid.Empty), CancellationToken.None));
+            service.CreateAsync(UserId, new CreateOrderRequest(Guid.Empty), null, CancellationToken.None));
 
         await AssertNothingSavedAsync();
     }

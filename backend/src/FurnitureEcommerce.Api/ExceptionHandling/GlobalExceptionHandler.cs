@@ -32,6 +32,12 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
                 Title = "Conflict",
                 Detail = exception.Message
             },
+            PaymentGatewayException => new ProblemDetails
+            {
+                Status = StatusCodes.Status502BadGateway,
+                Title = "Payment provider error",
+                Detail = exception.Message
+            },
             ValidationException validationException => new ValidationProblemDetails(
                 validationException.Errors
                     .GroupBy(error => error.PropertyName)
