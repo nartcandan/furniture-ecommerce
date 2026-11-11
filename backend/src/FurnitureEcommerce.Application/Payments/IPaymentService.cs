@@ -13,8 +13,11 @@ public enum PaymentOutcome
     /// <summary>The token does not belong to any order.</summary>
     Unknown,
 
-    /// <summary>The result is not known yet. The order keeps waiting for payment.</summary>
+    /// <summary>The provider says the customer has not finished the payment page.</summary>
     Pending,
+
+    /// <summary>The provider gave no usable answer, so nothing is known about the payment.</summary>
+    ProviderUnreachable,
     Success,
     Failed,
 

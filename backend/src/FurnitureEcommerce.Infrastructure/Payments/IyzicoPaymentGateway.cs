@@ -17,6 +17,9 @@ public class IyzicoPaymentGateway(IyzicoOptions iyzicoOptions, ILogger<IyzicoPay
     // "No payment was found for this token": the customer has not finished the payment page yet.
     private const string NoPaymentForTokenErrorCode = "5122";
 
+    // "Process has been locked before": seen when a payment that was already cancelled is cancelled again.
+    private const string AlreadyCancelledErrorCode = "8514";
+
     // iyzico requires an identity number. The store does not collect one, so this placeholder is sent.
     private const string PlaceholderIdentityNumber = "11111111111";
 
@@ -156,7 +159,10 @@ public class IyzicoPaymentGateway(IyzicoOptions iyzicoOptions, ILogger<IyzicoPay
 
             return cancel.Status == SuccessStatus
                 ? new PaymentCancellation(true)
-                : new PaymentCancellation(false, DescribeError(cancel.ErrorCode, cancel.ErrorMessage));
+                : new PaymentCancellation(
+                    false,
+                    DescribeError(cancel.ErrorCode, cancel.ErrorMessage),
+                    WasAlreadyCancelled: cancel.ErrorCode == AlreadyCancelledErrorCode);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

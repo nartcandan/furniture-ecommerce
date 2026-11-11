@@ -35,6 +35,19 @@ public interface IOrderRepository
     /// <returns>True only for the one call that changed the order.</returns>
     Task<bool> TryMarkPaymentFailedAsync(Guid orderId, string error, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Moves the order from PendingPayment to Cancelled and, in the same transaction, puts its
+    /// items back in stock. Used when the payment was not completed in time.
+    /// </summary>
+    /// <returns>True only for the one call that changed the order.</returns>
+    Task<bool> TryCancelUnpaidAsync(Guid orderId, string reason, CancellationToken cancellationToken);
+
+    /// <summary>Returns orders that have been waiting for payment since before the given time, oldest first.</summary>
+    Task<List<Order>> GetPendingPaymentCreatedBeforeAsync(DateTime createdBefore, int limit, CancellationToken cancellationToken);
+
+    /// <summary>Returns orders that have been in Cancelling since before the given time, oldest first.</summary>
+    Task<List<Order>> GetCancellingUpdatedBeforeAsync(DateTime updatedBefore, int limit, CancellationToken cancellationToken);
+
     /// <summary>Moves the user's order from Paid to Cancelling, which also blocks shipping.</summary>
     /// <returns>True only for the one call that changed the order.</returns>
     Task<bool> TryBeginCancellationAsync(Guid orderId, Guid userId, CancellationToken cancellationToken);

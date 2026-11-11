@@ -59,4 +59,7 @@ public record CheckoutResult(
     public static CheckoutResult Failed(string error) => new(CheckoutState.Failed, Error: error);
 }
 
-public record PaymentCancellation(bool IsSuccess, string? Error = null);
+/// <param name="WasAlreadyCancelled">
+/// The provider refused because this payment was cancelled by an earlier request.
+/// </param>
+public record PaymentCancellation(bool IsSuccess, string? Error = null, bool WasAlreadyCancelled = false);

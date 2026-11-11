@@ -40,7 +40,7 @@ public class PaymentService(
         {
             // The order keeps waiting. The reconciliation job asks the provider again later.
             logger.LogError(exception, "The payment result of order {OrderId} could not be read.", order.Id);
-            return PaymentOutcome.Pending;
+            return PaymentOutcome.ProviderUnreachable;
         }
 
         switch (result.State)

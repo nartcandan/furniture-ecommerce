@@ -98,6 +98,20 @@ public static class DependencyInjection
             configuration["Frontend:BaseUrl"]
                 ?? throw new InvalidOperationException("'Frontend:BaseUrl' is not configured.")));
 
+        var pendingPaymentTimeout = TimeSpan.FromMinutes(
+            configuration.GetValue("Reconciliation:PendingPaymentTimeoutMinutes", 35));
+
+        if (pendingPaymentTimeout <= ReconciliationSettings.PaymentPageLifetime)
+        {
+            // A shorter value would close orders whose payment page can still be paid.
+            throw new InvalidOperationException(
+                "'Reconciliation:PendingPaymentTimeoutMinutes' must be more than 30, the life of a payment page.");
+        }
+
+        services.AddSingleton(new ReconciliationSettings(
+            pendingPaymentTimeout,
+            TimeSpan.FromMinutes(configuration.GetValue("Reconciliation:CancellingTimeoutMinutes", 2))));
+
         services.AddSingleton<IFileStorage>(provider => new LocalFileStorage(
             uploadsPath,
             uploadsBaseUrl,

@@ -29,7 +29,8 @@ public class PaymentsController(IPaymentService paymentService, PaymentSettings 
             PaymentOutcome.Failed => "failed",
             PaymentOutcome.Refunded => "refunded",
             PaymentOutcome.RefundFailed => "refund-failed",
-            PaymentOutcome.Pending => "pending",
+            // For the customer both mean the same: the order is still waiting.
+            PaymentOutcome.Pending or PaymentOutcome.ProviderUnreachable => "pending",
             _ => "unknown"
         };
 

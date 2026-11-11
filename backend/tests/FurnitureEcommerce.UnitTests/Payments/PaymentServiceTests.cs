@@ -106,7 +106,7 @@ public class PaymentServiceTests
 
         var result = await HandleAsync();
 
-        Assert.Equal(PaymentOutcome.Pending, result.Outcome);
+        Assert.Equal(PaymentOutcome.ProviderUnreachable, result.Outcome);
         await repository.DidNotReceiveWithAnyArgs().TryMarkPaymentFailedAsync(default, default!, default);
     }
 

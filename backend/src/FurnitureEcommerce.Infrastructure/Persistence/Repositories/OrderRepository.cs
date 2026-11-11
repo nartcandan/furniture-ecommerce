@@ -140,7 +140,49 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
         return true;
     }
 
-    public async Task<bool> TryMarkPaymentFailedAsync(Guid orderId, string error, CancellationToken cancellationToken)
+    public Task<bool> TryMarkPaymentFailedAsync(Guid orderId, string error, CancellationToken cancellationToken)
+    {
+        return TryCloseUnpaidAsync(orderId, OrderStatus.PaymentFailed, error, cancellationToken);
+    }
+
+    public Task<bool> TryCancelUnpaidAsync(Guid orderId, string reason, CancellationToken cancellationToken)
+    {
+        return TryCloseUnpaidAsync(orderId, OrderStatus.Cancelled, reason, cancellationToken);
+    }
+
+    public Task<List<Order>> GetPendingPaymentCreatedBeforeAsync(
+        DateTime createdBefore,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.Orders
+            .AsNoTracking()
+            .Where(order => order.Status == OrderStatus.PendingPayment && order.CreatedAt < createdBefore)
+            .OrderBy(order => order.CreatedAt)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<List<Order>> GetCancellingUpdatedBeforeAsync(
+        DateTime updatedBefore,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        // UpdatedAt is set when the order enters Cancelling.
+        return dbContext.Orders
+            .AsNoTracking()
+            .Where(order => order.Status == OrderStatus.Cancelling && order.UpdatedAt < updatedBefore)
+            .OrderBy(order => order.UpdatedAt)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
+
+    // The only way out of PendingPayment without a payment. The stock goes back in the same transaction.
+    private async Task<bool> TryCloseUnpaidAsync(
+        Guid orderId,
+        OrderStatus closedStatus,
+        string error,
+        CancellationToken cancellationToken)
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var now = DateTime.UtcNow;
@@ -150,7 +192,7 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
             .Where(order => order.Id == orderId && order.Status == OrderStatus.PendingPayment)
             .ExecuteUpdateAsync(
                 setters => setters
-                    .SetProperty(order => order.Status, OrderStatus.PaymentFailed)
+                    .SetProperty(order => order.Status, closedStatus)
                     .SetProperty(order => order.PaymentError, storedError)
                     .SetProperty(order => order.UpdatedAt, now),
                 cancellationToken);

@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart, turn the cart into an order, pay for it on iyzico's sandbox payment page and cancel it on the day of payment. Admins can list orders and mark them as shipped and delivered. The clean-up of unpaid orders and the frontend are not built yet.
+> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart, turn the cart into an order, pay for it on iyzico's sandbox payment page and cancel it on the day of payment. Admins can list orders and mark them as shipped and delivered. A background job closes orders that were never paid. The frontend is not built yet.
 
 ## Tech stack
 
@@ -120,21 +120,31 @@ The tests replace iyzico with a fake, so they need no keys and make no calls to 
 - Only a `Paid` order can be cancelled, and only on the calendar day (Turkey time) it was paid, because iyzico cancels a payment only on that day. The `canCancel` field of an order shows whether this is still possible.
 - The order is first set to `Cancelling`, which stops it from being shipped while the refund is in progress.
 - If iyzico refuses the refund, the order goes back to `Paid` and the request gets `502 Bad Gateway`.
-- If iyzico cannot be reached, the result is unknown, so the order stays in `Cancelling` and the request gets `202 Accepted`. Finishing these orders in the background is not built yet.
+- If iyzico cannot be reached, the result is unknown, so the order stays in `Cancelling` and the request gets `202 Accepted`. The background job finishes it.
 
 ### Order statuses
 
 | Status | Meaning | Next |
 |---|---|---|
-| `PendingPayment` | Created, stock is held, waiting for the payment | `Paid`, `PaymentFailed` |
+| `PendingPayment` | Created, stock is held, waiting for the payment | `Paid`, `PaymentFailed`, `Cancelled` (not paid in time) |
 | `PaymentFailed` | The payment failed, stock was given back | |
 | `Paid` | The payment arrived | `Shipped` (admin), `Cancelling` (customer, same day) |
 | `Cancelling` | The refund is in progress, the order cannot be shipped | `Cancelled`, or back to `Paid` if the refund is refused |
-| `Cancelled` | Refunded, stock was given back | |
+| `Cancelled` | Refunded or never paid, stock was given back | |
 | `Shipped` | Sent to the customer, can no longer be cancelled | `Delivered` (admin) |
 | `Delivered` | Received by the customer | |
 
 Admins list orders with `GET /api/admin/orders`, which accepts `status`, `page` and `pageSize`, for example `?status=Paid&page=1&pageSize=20`. Every status change checks the current status inside the database update itself, so a cancellation and a shipment that arrive at the same moment cannot both succeed.
+
+### Background job
+
+A payment can end without the API hearing about it: the customer closes the payment page, the callback never arrives, or a refund request gets no answer. A background job (`OrderReconciliationWorker`) runs every minute and finishes these orders.
+
+- An order that has waited for payment for more than 35 minutes is checked at iyzico. If it was paid after all, it becomes `Paid`. Otherwise it is closed and its items go back in stock. The limit is longer than the 30 minutes an iyzico payment page stays valid, so an order is never closed while it can still be paid.
+- An order that has been in `Cancelling` for more than 2 minutes gets its refund requested again. iyzico refuses to cancel the same payment twice, so this cannot refund twice. The order becomes `Cancelled`, or `Paid` again if iyzico refuses the refund.
+- If iyzico cannot be reached, the order is left as it is and tried again on the next run.
+
+The intervals are in the `Reconciliation` section of `appsettings.json`.
 
 ## Running the tests
 

@@ -45,6 +45,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("AdminUser:Email", AdminEmail);
         builder.UseSetting("AdminUser:Password", AdminPassword);
         builder.UseSetting("Frontend:BaseUrl", FrontendBaseUrl);
+        // The background job is off. Tests run the reconciliation themselves, so results do not depend on timing.
+        builder.UseSetting("Reconciliation:Enabled", "false");
         builder.UseSetting("Payments:CallbackUrl", "http://localhost/api/payments/callback");
         // The keys only have to pass the startup check. The real gateway is replaced below.
         builder.UseSetting("Iyzico:ApiKey", "test-api-key");

@@ -1,3 +1,4 @@
+using FurnitureEcommerce.Api.BackgroundServices;
 using FurnitureEcommerce.Api.ExceptionHandling;
 using FurnitureEcommerce.Api.OpenApi;
 using FurnitureEcommerce.Application;
@@ -16,6 +17,13 @@ Directory.CreateDirectory(uploadsPath);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration, uploadsPath);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// The tests turn this off and run the reconciliation themselves, at the moment they choose.
+if (builder.Configuration.GetValue("Reconciliation:Enabled", true))
+{
+    builder.Services.AddHostedService<OrderReconciliationWorker>();
+}
+
 builder.Services.AddProblemDetails();
 builder.Services
     .AddControllers(options =>

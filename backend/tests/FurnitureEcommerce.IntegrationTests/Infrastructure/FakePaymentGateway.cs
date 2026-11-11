@@ -19,6 +19,9 @@ public class FakePaymentGateway : IPaymentGateway
     /// <summary>When set, cancelling a payment fails with this error.</summary>
     public string? CancelError { get; set; }
 
+    /// <summary>When true, cancelling fails the way it does for a payment that was already cancelled.</summary>
+    public bool CancelSaysAlreadyCancelled { get; set; }
+
     public ConcurrentBag<string> CancelledPaymentIds { get; } = [];
 
     public void Reset()
@@ -28,6 +31,7 @@ public class FakePaymentGateway : IPaymentGateway
         CancelledPaymentIds.Clear();
         StartError = null;
         CancelError = null;
+        CancelSaysAlreadyCancelled = false;
         IsUnreachable = false;
     }
 
@@ -58,6 +62,11 @@ public class FakePaymentGateway : IPaymentGateway
     public Task<PaymentCancellation> CancelPaymentAsync(string paymentId, CancellationToken cancellationToken)
     {
         ThrowIfUnreachable();
+
+        if (CancelSaysAlreadyCancelled)
+        {
+            return Task.FromResult(new PaymentCancellation(false, "Already cancelled", WasAlreadyCancelled: true));
+        }
 
         if (CancelError is not null)
         {
