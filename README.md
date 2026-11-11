@@ -1,5 +1,7 @@
 # Furniture E-Commerce
 
+[![CI](https://github.com/nartcandan/furniture-ecommerce/actions/workflows/ci.yml/badge.svg)](https://github.com/nartcandan/furniture-ecommerce/actions/workflows/ci.yml)
+
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
 > **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. The cart, checkout, and the frontend are not built yet.
@@ -84,3 +86,5 @@ dotnet test FurnitureEcommerce.slnx
 ```
 
 Docker must be running. The integration tests start their own temporary PostgreSQL container, so they do not touch your local database.
+
+GitHub Actions builds the backend and runs the same tests on every push to `main` and on every pull request.
