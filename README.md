@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. The cart, checkout, and the frontend are not built yet.
+> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart. Checkout, orders, and the frontend are not built yet.
 
 ## Tech stack
 
@@ -60,7 +60,7 @@ To stop PostgreSQL, run `docker compose down` from the project root. Your data i
 
 ## Using the API
 
-Anyone can read the active catalog, register and log in. Catalog changes need the admin role.
+Anyone can read the active catalog, register and log in. Addresses and the cart need a signed-in user. Catalog changes need the admin role.
 
 | Endpoints | Access |
 |---|---|
@@ -68,14 +68,24 @@ Anyone can read the active catalog, register and log in. Catalog changes need th
 | `GET /api/categories`, `GET /api/products` and their detail routes | Public, active records only |
 | `POST`, `PUT`, `PATCH`, `DELETE` on categories, products, stock and images | Admin |
 | `GET /api/admin/categories`, `GET /api/admin/products`, `GET /api/admin/products/{id}` | Admin, including inactive records |
+| `GET`, `POST`, `PUT`, `DELETE` on `/api/addresses` | Signed-in user, own addresses only |
+| `GET /api/cart`, `POST /api/cart/items`, `PUT` and `DELETE /api/cart/items/{productId}`, `DELETE /api/cart` | Signed-in user, own cart only |
 
-New accounts get the customer role. To make admin requests, log in with the admin account from step 3 and send the `accessToken` from the response in the `Authorization` header:
+New accounts get the customer role. To make signed-in requests, log in and send the `accessToken` from the response in the `Authorization` header. For admin requests, log in with the admin account from step 3:
 
 ```http
 Authorization: Bearer YOUR_ACCESS_TOKEN
 ```
 
 Tokens are valid for one hour. After that, log in again. An account is locked for five minutes after five failed login attempts.
+
+### Cart
+
+Add a product with `POST /api/cart/items` and a body such as `{ "productId": "...", "quantity": 2 }`. Adding the same product again increases its quantity. `PUT /api/cart/items/{productId}` with `{ "quantity": 3 }` sets the quantity.
+
+- The cart does not store prices. Every response shows the current price, the line totals and the cart total.
+- A quantity above the current stock is rejected with `409 Conflict`. The cart does not reserve stock.
+- If a product is deactivated or its stock falls below the quantity in the cart, the line is flagged with `isAvailable: false` or `hasInsufficientStock: true`, and `canCheckout` is `false` until the customer fixes the cart.
 
 ## Running the tests
 

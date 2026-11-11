@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 namespace FurnitureEcommerce.Domain.Entities;
 
 public class Product
@@ -21,4 +23,12 @@ public class Product
 
     public Category Category { get; set; } = null!;
     public ICollection<ProductImage> Images { get; set; } = [];
+
+    // The single definition of "can be sold": the product and its category are both active.
+    // The public catalog, the cart and order creation all use this rule.
+    // The filter is for database queries, the property is for a loaded product with its category.
+    public static Expression<Func<Product, bool>> SellableFilter =>
+        product => product.IsActive && product.Category.IsActive;
+
+    public bool IsSellable => IsActive && Category.IsActive;
 }

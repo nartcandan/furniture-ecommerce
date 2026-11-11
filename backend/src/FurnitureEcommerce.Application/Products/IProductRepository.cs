@@ -8,6 +8,10 @@ public interface IProductRepository
     Task<PagedResult<Product>> GetActivePagedAsync(ProductQuery query, CancellationToken cancellationToken);
     Task<PagedResult<Product>> GetAllPagedAsync(ProductQuery query, CancellationToken cancellationToken);
     Task<Product?> GetActiveBySlugAsync(string slug, CancellationToken cancellationToken);
+
+    /// <summary>Returns the product only if it can be sold (see <see cref="Product.SellableFilter"/>).</summary>
+    Task<Product?> GetActiveByIdAsync(Guid id, CancellationToken cancellationToken);
+
     Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<bool> SlugExistsAsync(string slug, CancellationToken cancellationToken);
 

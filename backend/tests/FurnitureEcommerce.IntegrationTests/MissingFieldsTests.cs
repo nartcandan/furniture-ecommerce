@@ -18,6 +18,8 @@ public class MissingFieldsTests(ApiFactory factory) : ApiTestBase(factory)
     [InlineData("POST", "/api/categories")]
     [InlineData("POST", "/api/products")]
     [InlineData("POST", "/api/addresses")]
+    [InlineData("POST", "/api/cart/items")]
+    [InlineData("PUT", "/api/cart/items/018f4e2a-0000-7000-8000-000000000001")]
     public async Task Create_ReturnsBadRequest_ForEmptyBody(string method, string path)
     {
         var response = await Client.SendAsync(

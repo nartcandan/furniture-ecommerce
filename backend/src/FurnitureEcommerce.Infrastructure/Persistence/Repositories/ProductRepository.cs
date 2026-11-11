@@ -74,6 +74,12 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
             .FirstOrDefaultAsync(product => product.Slug == slug, cancellationToken);
     }
 
+    public Task<Product?> GetActiveByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return ActiveProducts()
+            .FirstOrDefaultAsync(product => product.Id == id, cancellationToken);
+    }
+
     public Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return dbContext.Products
@@ -151,7 +157,7 @@ public class ProductRepository(AppDbContext dbContext) : IProductRepository
         return dbContext.Products
             .AsNoTracking()
             .Include(product => product.Category)
-            .Where(product => product.IsActive && product.Category.IsActive);
+            .Where(Product.SellableFilter);
     }
 
     private static IQueryable<Product> ApplySort(IQueryable<Product> products, string? sort)
