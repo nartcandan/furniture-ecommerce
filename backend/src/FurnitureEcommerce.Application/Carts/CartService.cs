@@ -106,6 +106,6 @@ public class CartService(
             product.Price * item.Quantity,
             product.StockQuantity,
             product.IsSellable,
-            item.Quantity > product.StockQuantity);
+            item.HasInsufficientStock);
     }
 }

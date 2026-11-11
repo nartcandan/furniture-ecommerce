@@ -11,4 +11,10 @@ public class CartItem
 
     public Cart Cart { get; set; } = null!;
     public Product Product { get; set; } = null!;
+
+    // Both need the product and its category to be loaded.
+    // The cart uses them for its warnings, and order creation uses them to refuse the order.
+    public bool HasInsufficientStock => Quantity > Product.StockQuantity;
+
+    public bool CanBeOrdered => Product.IsSellable && !HasInsufficientStock;
 }

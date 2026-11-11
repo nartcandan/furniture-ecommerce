@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart. Checkout, orders, and the frontend are not built yet.
+> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart and turn the cart into an order. Payment and the frontend are not built yet, so orders stay in the `PendingPayment` status.
 
 ## Tech stack
 
@@ -60,7 +60,7 @@ To stop PostgreSQL, run `docker compose down` from the project root. Your data i
 
 ## Using the API
 
-Anyone can read the active catalog, register and log in. Addresses and the cart need a signed-in user. Catalog changes need the admin role.
+Anyone can read the active catalog, register and log in. Addresses, the cart and orders need a signed-in user. Catalog changes need the admin role.
 
 | Endpoints | Access |
 |---|---|
@@ -70,6 +70,7 @@ Anyone can read the active catalog, register and log in. Addresses and the cart 
 | `GET /api/admin/categories`, `GET /api/admin/products`, `GET /api/admin/products/{id}` | Admin, including inactive records |
 | `GET`, `POST`, `PUT`, `DELETE` on `/api/addresses` | Signed-in user, own addresses only |
 | `GET /api/cart`, `POST /api/cart/items`, `PUT` and `DELETE /api/cart/items/{productId}`, `DELETE /api/cart` | Signed-in user, own cart only |
+| `POST /api/orders`, `GET /api/orders`, `GET /api/orders/{id}` | Signed-in user, own orders only |
 
 New accounts get the customer role. To make signed-in requests, log in and send the `accessToken` from the response in the `Authorization` header. For admin requests, log in with the admin account from step 3:
 
@@ -86,6 +87,15 @@ Add a product with `POST /api/cart/items` and a body such as `{ "productId": "..
 - The cart does not store prices. Every response shows the current price, the line totals and the cart total.
 - A quantity above the current stock is rejected with `409 Conflict`. The cart does not reserve stock.
 - If a product is deactivated or its stock falls below the quantity in the cart, the line is flagged with `isAvailable: false` or `hasInsufficientStock: true`, and `canCheckout` is `false` until the customer fixes the cart.
+
+### Orders
+
+`POST /api/orders` with `{ "addressId": "..." }` creates an order from the cart.
+
+- The order copies the address, the product names and the current prices, so later changes do not affect it.
+- The items are taken out of stock in the same transaction. If any item is unavailable or short of stock, the request is rejected with `409 Conflict` and no stock changes.
+- A customer can have only one order waiting for payment. A second request, such as a double click, gets `409 Conflict`.
+- The cart is kept. It will be emptied when the order is paid.
 
 ## Running the tests
 

@@ -3,6 +3,7 @@ using FurnitureEcommerce.Application.Addresses;
 using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Carts;
 using FurnitureEcommerce.Application.Categories;
+using FurnitureEcommerce.Application.Orders;
 using FurnitureEcommerce.Application.Products;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IProductImageService, ProductImageService>();
 

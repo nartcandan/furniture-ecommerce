@@ -4,6 +4,7 @@ using FurnitureEcommerce.Application.Auth;
 using FurnitureEcommerce.Application.Carts;
 using FurnitureEcommerce.Application.Categories;
 using FurnitureEcommerce.Application.Common;
+using FurnitureEcommerce.Application.Orders;
 using FurnitureEcommerce.Application.Products;
 using FurnitureEcommerce.Infrastructure.Identity;
 using FurnitureEcommerce.Infrastructure.Persistence;
@@ -81,6 +82,7 @@ public static class DependencyInjection
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddSingleton<IFileStorage>(provider => new LocalFileStorage(
             uploadsPath,
