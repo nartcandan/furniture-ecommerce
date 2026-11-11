@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart, turn the cart into an order, pay for it on iyzico's sandbox payment page and cancel it on the day of payment. Admin order management, the clean-up of unpaid orders and the frontend are not built yet.
+> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart, turn the cart into an order, pay for it on iyzico's sandbox payment page and cancel it on the day of payment. Admins can list orders and mark them as shipped and delivered. The clean-up of unpaid orders and the frontend are not built yet.
 
 ## Tech stack
 
@@ -70,6 +70,7 @@ Anyone can read the active catalog, register and log in. Addresses, the cart and
 | `GET /api/categories`, `GET /api/products` and their detail routes | Public, active records only |
 | `POST`, `PUT`, `PATCH`, `DELETE` on categories, products, stock and images | Admin |
 | `GET /api/admin/categories`, `GET /api/admin/products`, `GET /api/admin/products/{id}` | Admin, including inactive records |
+| `GET /api/admin/orders`, `GET /api/admin/orders/{id}`, `POST /api/admin/orders/{id}/ship`, `POST /api/admin/orders/{id}/deliver` | Admin, orders of all customers |
 | `GET`, `POST`, `PUT`, `DELETE` on `/api/addresses` | Signed-in user, own addresses only |
 | `GET /api/cart`, `POST /api/cart/items`, `PUT` and `DELETE /api/cart/items/{productId}`, `DELETE /api/cart` | Signed-in user, own cart only |
 | `POST /api/orders`, `GET /api/orders`, `GET /api/orders/{id}`, `POST /api/orders/{id}/cancel` | Signed-in user, own orders only |
@@ -120,6 +121,20 @@ The tests replace iyzico with a fake, so they need no keys and make no calls to 
 - The order is first set to `Cancelling`, which stops it from being shipped while the refund is in progress.
 - If iyzico refuses the refund, the order goes back to `Paid` and the request gets `502 Bad Gateway`.
 - If iyzico cannot be reached, the result is unknown, so the order stays in `Cancelling` and the request gets `202 Accepted`. Finishing these orders in the background is not built yet.
+
+### Order statuses
+
+| Status | Meaning | Next |
+|---|---|---|
+| `PendingPayment` | Created, stock is held, waiting for the payment | `Paid`, `PaymentFailed` |
+| `PaymentFailed` | The payment failed, stock was given back | |
+| `Paid` | The payment arrived | `Shipped` (admin), `Cancelling` (customer, same day) |
+| `Cancelling` | The refund is in progress, the order cannot be shipped | `Cancelled`, or back to `Paid` if the refund is refused |
+| `Cancelled` | Refunded, stock was given back | |
+| `Shipped` | Sent to the customer, can no longer be cancelled | `Delivered` (admin) |
+| `Delivered` | Received by the customer | |
+
+Admins list orders with `GET /api/admin/orders`, which accepts `status`, `page` and `pageSize`, for example `?status=Paid&page=1&pageSize=20`. Every status change checks the current status inside the database update itself, so a cancellation and a shipment that arrive at the same moment cannot both succeed.
 
 ## Running the tests
 

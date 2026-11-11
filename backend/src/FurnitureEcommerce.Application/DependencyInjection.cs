@@ -19,6 +19,7 @@ public static class DependencyInjection
         // Lets tests move the clock, for rules such as "cancel only on the day of payment".
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IAddressService, AddressService>();
+        services.AddScoped<IAdminOrderService, AdminOrderService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICategoryService, CategoryService>();

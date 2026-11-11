@@ -1,3 +1,4 @@
+using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Common.Exceptions;
 using FurnitureEcommerce.Application.Orders;
 using FurnitureEcommerce.Domain.Entities;
@@ -242,6 +243,60 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
                         .SetProperty(product => product.UpdatedAt, now),
                     cancellationToken);
         }
+    }
+
+    public async Task<bool> TryChangeStatusAsync(
+        Guid orderId,
+        OrderStatus from,
+        OrderStatus to,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+
+        var affectedRows = await dbContext.Orders
+            .Where(order => order.Id == orderId && order.Status == from)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(order => order.Status, to)
+                    .SetProperty(order => order.UpdatedAt, now),
+                cancellationToken);
+
+        return affectedRows > 0;
+    }
+
+    public async Task<PagedResult<Order>> GetPagedAsync(
+        OrderStatus? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var orders = dbContext.Orders.AsNoTracking();
+
+        if (status is { } wanted)
+        {
+            orders = orders.Where(order => order.Status == wanted);
+        }
+
+        var totalCount = await orders.CountAsync(cancellationToken);
+
+        // Id is the tie-breaker so that pages stay stable when two orders share a timestamp.
+        var items = await orders
+            .Include(order => order.Items)
+            .OrderByDescending(order => order.CreatedAt)
+            .ThenByDescending(order => order.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<Order>(items, page, pageSize, totalCount);
+    }
+
+    public Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return dbContext.Orders
+            .AsNoTracking()
+            .Include(order => order.Items)
+            .FirstOrDefaultAsync(order => order.Id == id, cancellationToken);
     }
 
     public Task<List<Order>> GetByUserAsync(Guid userId, CancellationToken cancellationToken)

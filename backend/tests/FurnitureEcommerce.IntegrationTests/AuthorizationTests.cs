@@ -28,7 +28,11 @@ public class AuthorizationTests(ApiFactory factory) : ApiTestBase(factory)
         { "DELETE", $"/api/products/{Id}" },
         { "POST", $"/api/products/{Id}/images" },
         { "DELETE", $"/api/products/{Id}/images/{Id}" },
-        { "PUT", $"/api/products/{Id}/images/order" }
+        { "PUT", $"/api/products/{Id}/images/order" },
+        { "GET", "/api/admin/orders" },
+        { "GET", $"/api/admin/orders/{Id}" },
+        { "POST", $"/api/admin/orders/{Id}/ship" },
+        { "POST", $"/api/admin/orders/{Id}/deliver" }
     };
 
     private static HttpRequestMessage NewRequest(string method, string path, string? token = null)
@@ -38,7 +42,10 @@ public class AuthorizationTests(ApiFactory factory) : ApiTestBase(factory)
             ? new MultipartFormDataContent { { new ByteArrayContent(PngBytes), "file", "photo.png" } }
             : new StringContent("{}", Encoding.UTF8, "application/json");
 
-        var request = new HttpRequestMessage(new HttpMethod(method), path) { Content = content };
+        var request = new HttpRequestMessage(new HttpMethod(method), path)
+        {
+            Content = method == "GET" ? null : content
+        };
 
         if (token is not null)
         {
