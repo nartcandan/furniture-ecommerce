@@ -4,7 +4,18 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart, turn the cart into an order, pay for it on iyzico's sandbox payment page and cancel it on the day of payment. Admins can list orders and mark them as shipped and delivered. A background job closes orders that were never paid. The frontend is not built yet.
+> **Status:** The backend is complete. The React frontend is the next step and is not built yet.
+
+## What works
+
+- **Catalog:** categories, products with filtering, sorting and paging, stock, and product images. Changes require the admin role.
+- **Accounts:** registration and login with JWT, customer and admin roles.
+- **Cart:** stored in the database, always priced from the current catalog, with warnings when an item becomes unavailable.
+- **Orders:** an order copies the address and prices and takes its items out of stock in one transaction.
+- **Payment:** iyzico's hosted payment page (sandbox), with a callback that can safely arrive more than once.
+- **Cancellation:** the customer can cancel a paid order on the day of payment and gets a refund.
+- **Admin orders:** listing, and marking orders as shipped and delivered.
+- **Background job:** closes orders that were never paid and finishes refunds that got no answer.
 
 ## Tech stack
 
@@ -13,6 +24,7 @@ A single-seller online store for home furniture and decoration. Customers can br
 - **Database:** PostgreSQL
 - **Payments:** iyzico (sandbox)
 - **Infrastructure:** Docker Compose, GitHub Actions
+- **Tests:** xUnit, Testcontainers (a real PostgreSQL for integration tests), NSubstitute
 
 ## Running the API locally
 
@@ -111,8 +123,6 @@ The response of `POST /api/orders` contains `paymentPageUrl`, an iyzico payment 
 - If money arrives for an order that is no longer waiting for payment, the payment is cancelled at iyzico right away.
 - At the end the browser is sent to `Frontend:BaseUrl` (`http://localhost:5173/orders/{id}?payment=success`). The frontend is not built yet, so the browser shows a connection error there. Check the result with `GET /api/orders/{id}`.
 
-The tests replace iyzico with a fake, so they need no keys and make no calls to iyzico.
-
 ### Cancelling an order
 
 `POST /api/orders/{id}/cancel` cancels the whole order, refunds the payment at iyzico and puts the items back in stock.
@@ -154,6 +164,8 @@ From the `backend` folder:
 dotnet test FurnitureEcommerce.slnx
 ```
 
-Docker must be running. The integration tests start their own temporary PostgreSQL container, so they do not touch your local database.
+Docker must be running. The integration tests start their own temporary PostgreSQL container, so they do not touch your local database. They replace iyzico with a fake, so they need no keys and make no calls to iyzico.
+
+Several tests send requests at the same moment against the real database to check the cases that matter most in a store: two customers buying the last item, a double click on the pay button, a payment callback that arrives several times, and a cancellation that races with a shipment.
 
 GitHub Actions builds the backend and runs the same tests on every push to `main` and on every pull request.

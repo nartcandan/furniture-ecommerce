@@ -265,6 +265,28 @@ public class OrdersTests(ApiFactory factory) : ApiTestBase(factory)
     }
 
     [Fact]
+    public async Task Create_NeverSellsMoreThanStock_WhenManyCustomersOrderSeveralItemsAtOnce()
+    {
+        // 5 in stock and six customers who each want 2: only two orders fit, and 1 is left over.
+        var product = await CreateProductAsync(stock: 5);
+        var customers = new List<(HttpClient Client, Guid AddressId)>();
+
+        for (var i = 0; i < 6; i++)
+        {
+            var client = await CreateCustomerClientAsync($"customer{i}@example.com");
+            await AddToCartAsync(client, product.Id, 2);
+            customers.Add((client, (await CreateAddressAsync(client)).Id));
+        }
+
+        var responses = await Task.WhenAll(
+            customers.Select(customer => PlaceOrderAsync(customer.Client, customer.AddressId)));
+
+        Assert.Equal(2, responses.Count(response => response.StatusCode == HttpStatusCode.Created));
+        Assert.Equal(4, responses.Count(response => response.StatusCode == HttpStatusCode.Conflict));
+        Assert.Equal(1, await GetStockAsync(product.Id));
+    }
+
+    [Fact]
     public async Task Create_MakesOneOrder_WhenTheSameCustomerSendsItManyTimesAtOnce()
     {
         var customer = await CreateCustomerClientAsync();

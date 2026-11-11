@@ -218,6 +218,32 @@ public class ReconciliationTests(ApiFactory factory) : ApiTestBase(factory)
     }
 
     [Fact]
+    public async Task CallbackAndReconciliation_AtTheSameTime_PayTheOrderOnce()
+    {
+        // The callback arrives late, at the moment the job is looking at the same order.
+        var (customer, product, order) = await PlaceOrderAsync();
+        await customer.PostAsJsonAsync("/api/cart/items", new AddCartItemRequest(product.Id, 3));
+        ProviderReportsPaid(order);
+        await AgeOrderAsync(order.Id, LongAgo);
+        var token = Payments.TokenFor(order.Id);
+
+        var callbacks = Enumerable.Range(0, 3).Select(_ => AnonymousClient.PostAsync(
+            "/api/payments/callback",
+            new FormUrlEncodedContent(new Dictionary<string, string> { ["token"] = token })));
+        var runs = Enumerable.Range(0, 3).Select(_ => RunAsync());
+        await Task.WhenAll(callbacks.Cast<Task>().Concat(runs));
+
+        var stored = await GetOrderAsync(customer, order.Id);
+        var cart = await customer.GetFromJsonAsync<CartResponse>("/api/cart");
+
+        Assert.Equal("Paid", stored.Status);
+        // 5 in the cart, 2 ordered. A second decrement would leave 1.
+        Assert.Equal(3, cart!.TotalQuantity);
+        Assert.Equal(8, await GetStockAsync(product.Id));
+        Assert.Empty(Payments.CancelledPaymentIds);
+    }
+
+    [Fact]
     public async Task CancellingOrder_IsCancelledAndStockReleased_WhenRefundSucceedsOnRetry()
     {
         var (customer, product, order) = await PlaceOrderAsync();
