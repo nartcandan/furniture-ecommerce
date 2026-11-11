@@ -1,5 +1,6 @@
 using FurnitureEcommerce.Api.Extensions;
 using FurnitureEcommerce.Application.Orders;
+using FurnitureEcommerce.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,5 +40,20 @@ public class OrdersController(IOrderService orderService) : ControllerBase
             HttpContext.Connection.RemoteIpAddress?.ToString(),
             cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
+    }
+
+    /// <summary>
+    /// Cancels a paid order on the day it was paid, refunds the payment and puts the items back in stock.
+    /// Answers 202 with the order still in Cancelling when the payment provider could not be reached;
+    /// the cancellation is then finished in the background.
+    /// </summary>
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<OrderResponse>(StatusCodes.Status202Accepted)]
+    public async Task<ActionResult<OrderResponse>> Cancel(Guid id, CancellationToken cancellationToken)
+    {
+        var order = await orderService.CancelAsync(User.GetUserId(), id, cancellationToken);
+
+        return order.Status == nameof(OrderStatus.Cancelling) ? Accepted(order) : order;
     }
 }

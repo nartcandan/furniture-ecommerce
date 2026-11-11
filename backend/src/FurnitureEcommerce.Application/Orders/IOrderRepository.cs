@@ -34,6 +34,19 @@ public interface IOrderRepository
     /// <returns>True only for the one call that changed the order.</returns>
     Task<bool> TryMarkPaymentFailedAsync(Guid orderId, string error, CancellationToken cancellationToken);
 
+    /// <summary>Moves the user's order from Paid to Cancelling, which also blocks shipping.</summary>
+    /// <returns>True only for the one call that changed the order.</returns>
+    Task<bool> TryBeginCancellationAsync(Guid orderId, Guid userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Moves the order from Cancelling to Cancelled and, in the same transaction, puts its items back in stock.
+    /// </summary>
+    /// <returns>True only for the one call that changed the order.</returns>
+    Task<bool> TryCompleteCancellationAsync(Guid orderId, CancellationToken cancellationToken);
+
+    /// <summary>Moves the order from Cancelling back to Paid, because the payment could not be refunded.</summary>
+    Task<bool> TryRevertCancellationAsync(Guid orderId, CancellationToken cancellationToken);
+
     /// <summary>Returns the user's orders with their items, newest first.</summary>
     Task<List<Order>> GetByUserAsync(Guid userId, CancellationToken cancellationToken);
 

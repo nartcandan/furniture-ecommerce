@@ -29,4 +29,17 @@ public class Order
     public DateTime? UpdatedAt { get; set; }
 
     public ICollection<OrderItem> Items { get; set; } = [];
+
+    // The payment provider can only cancel a payment on the day it was made,
+    // so the limit is the calendar day in Turkey, not 24 hours.
+    private static readonly TimeZoneInfo StoreTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+
+    public bool IsPaidOn(DateTime utcNow) =>
+        PaidAt is { } paidAt && ToStoreDate(paidAt) == ToStoreDate(utcNow);
+
+    /// <summary>A customer can cancel an order that is paid, not yet shipped, and paid today.</summary>
+    public bool CanBeCancelled(DateTime utcNow) => Status == OrderStatus.Paid && IsPaidOn(utcNow);
+
+    private static DateOnly ToStoreDate(DateTime utc) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), StoreTimeZone));
 }

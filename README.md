@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart, turn the cart into an order and pay for it on iyzico's sandbox payment page. Order cancellation, admin order management, the clean-up of unpaid orders and the frontend are not built yet.
+> **Status:** In development. The catalog API (categories, products, stock, and product images) and JWT authentication work, and catalog changes require the admin role. Signed-in users can manage their addresses and their cart, turn the cart into an order, pay for it on iyzico's sandbox payment page and cancel it on the day of payment. Admin order management, the clean-up of unpaid orders and the frontend are not built yet.
 
 ## Tech stack
 
@@ -72,7 +72,7 @@ Anyone can read the active catalog, register and log in. Addresses, the cart and
 | `GET /api/admin/categories`, `GET /api/admin/products`, `GET /api/admin/products/{id}` | Admin, including inactive records |
 | `GET`, `POST`, `PUT`, `DELETE` on `/api/addresses` | Signed-in user, own addresses only |
 | `GET /api/cart`, `POST /api/cart/items`, `PUT` and `DELETE /api/cart/items/{productId}`, `DELETE /api/cart` | Signed-in user, own cart only |
-| `POST /api/orders`, `GET /api/orders`, `GET /api/orders/{id}` | Signed-in user, own orders only |
+| `POST /api/orders`, `GET /api/orders`, `GET /api/orders/{id}`, `POST /api/orders/{id}/cancel` | Signed-in user, own orders only |
 | `POST /api/payments/callback` | Called by the customer's browser when it returns from iyzico |
 
 New accounts get the customer role. To make signed-in requests, log in and send the `accessToken` from the response in the `Authorization` header. For admin requests, log in with the admin account from step 3:
@@ -111,6 +111,15 @@ The response of `POST /api/orders` contains `paymentPageUrl`, an iyzico payment 
 - At the end the browser is sent to `Frontend:BaseUrl` (`http://localhost:5173/orders/{id}?payment=success`). The frontend is not built yet, so the browser shows a connection error there. Check the result with `GET /api/orders/{id}`.
 
 The tests replace iyzico with a fake, so they need no keys and make no calls to iyzico.
+
+### Cancelling an order
+
+`POST /api/orders/{id}/cancel` cancels the whole order, refunds the payment at iyzico and puts the items back in stock.
+
+- Only a `Paid` order can be cancelled, and only on the calendar day (Turkey time) it was paid, because iyzico cancels a payment only on that day. The `canCancel` field of an order shows whether this is still possible.
+- The order is first set to `Cancelling`, which stops it from being shipped while the refund is in progress.
+- If iyzico refuses the refund, the order goes back to `Paid` and the request gets `502 Bad Gateway`.
+- If iyzico cannot be reached, the result is unknown, so the order stays in `Cancelling` and the request gets `202 Accepted`. Finishing these orders in the background is not built yet.
 
 ## Running the tests
 

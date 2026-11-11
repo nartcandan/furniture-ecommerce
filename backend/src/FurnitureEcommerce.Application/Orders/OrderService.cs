@@ -5,6 +5,7 @@ using FurnitureEcommerce.Application.Carts;
 using FurnitureEcommerce.Application.Common.Exceptions;
 using FurnitureEcommerce.Application.Payments;
 using FurnitureEcommerce.Domain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace FurnitureEcommerce.Application.Orders;
 
@@ -15,6 +16,8 @@ public class OrderService(
     IIdentityService identityService,
     IPaymentGateway paymentGateway,
     PaymentSettings paymentSettings,
+    TimeProvider timeProvider,
+    ILogger<OrderService> logger,
     IValidator<CreateOrderRequest> createValidator) : IOrderService
 {
     public async Task<OrderResponse> CreateAsync(
@@ -124,10 +127,62 @@ public class OrderService(
         return ToResponse(order);
     }
 
+    public async Task<OrderResponse> CancelAsync(Guid userId, Guid id, CancellationToken cancellationToken)
+    {
+        var order = await repository.GetForUserAsync(id, userId, cancellationToken)
+            ?? throw new NotFoundException($"Order '{id}' was not found.");
+
+        if (order.Status != OrderStatus.Paid)
+        {
+            throw new ConflictException("Only a paid order that has not been shipped can be cancelled.");
+        }
+
+        if (!order.CanBeCancelled(timeProvider.GetUtcNow().UtcDateTime))
+        {
+            throw new ConflictException("An order can only be cancelled on the day it was paid.");
+        }
+
+        // Cancelling is taken before the provider is called. From here on the order cannot be
+        // shipped, and a second cancel request stops at this line.
+        if (!await repository.TryBeginCancellationAsync(id, userId, cancellationToken))
+        {
+            throw new ConflictException("The order has changed and can no longer be cancelled.");
+        }
+
+        PaymentCancellation cancellation;
+
+        try
+        {
+            cancellation = await paymentGateway.CancelPaymentAsync(order.PaymentId!, cancellationToken);
+        }
+        catch (PaymentGatewayException exception)
+        {
+            // The refund may or may not have happened. The order stays in Cancelling and the
+            // reconciliation job finishes it, so the request is not repeated blindly here.
+            logger.LogError(exception, "The cancellation of order {OrderId} could not be confirmed.", id);
+            return await GetByIdAsync(userId, id, cancellationToken);
+        }
+
+        if (!cancellation.IsSuccess)
+        {
+            await repository.TryRevertCancellationAsync(id, cancellationToken);
+
+            logger.LogWarning(
+                "The payment of order {OrderId} could not be refunded: {Error}", id, cancellation.Error);
+
+            throw new PaymentGatewayException(
+                "The payment could not be refunded, so the order was not cancelled. Contact support.");
+        }
+
+        await repository.TryCompleteCancellationAsync(id, cancellationToken);
+
+        return await GetByIdAsync(userId, id, cancellationToken);
+    }
+
     private static ConflictException Unavailable(string productName) =>
         new($"'{productName}' has changed or is no longer available in the requested quantity. Review your cart.");
 
-    private static OrderResponse ToResponse(Order order, string? paymentPageUrl = null) => new(
+    private OrderResponse ToResponse(Order order, string? paymentPageUrl = null) => new(
         order.Id,
         order.Status.ToString(),
         order.TotalAmount,
@@ -142,6 +197,7 @@ public class OrderService(
         order.PaymentError,
         order.PaidAt,
         order.CreatedAt,
+        order.CanBeCancelled(timeProvider.GetUtcNow().UtcDateTime),
         // Order items have no position of their own, so the name gives a stable order.
         order.Items
             .OrderBy(item => item.ProductName, StringComparer.Ordinal)

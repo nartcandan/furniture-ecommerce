@@ -159,13 +159,76 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
             return false;
         }
 
+        await RestockAsync(orderId, now, cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> TryBeginCancellationAsync(Guid orderId, Guid userId, CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+
+        var affectedRows = await dbContext.Orders
+            .Where(order => order.Id == orderId && order.UserId == userId && order.Status == OrderStatus.Paid)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(order => order.Status, OrderStatus.Cancelling)
+                    .SetProperty(order => order.UpdatedAt, now),
+                cancellationToken);
+
+        return affectedRows > 0;
+    }
+
+    public async Task<bool> TryCompleteCancellationAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+
+        var affectedRows = await dbContext.Orders
+            .Where(order => order.Id == orderId && order.Status == OrderStatus.Cancelling)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(order => order.Status, OrderStatus.Cancelled)
+                    .SetProperty(order => order.UpdatedAt, now),
+                cancellationToken);
+
+        if (affectedRows == 0)
+        {
+            return false;
+        }
+
+        await RestockAsync(orderId, now, cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> TryRevertCancellationAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+
+        var affectedRows = await dbContext.Orders
+            .Where(order => order.Id == orderId && order.Status == OrderStatus.Cancelling)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(order => order.Status, OrderStatus.Paid)
+                    .SetProperty(order => order.UpdatedAt, now),
+                cancellationToken);
+
+        return affectedRows > 0;
+    }
+
+    // Must run inside the transaction that changed the order's status. That status check lets only
+    // one call through, so the stock goes back exactly once.
+    private async Task RestockAsync(Guid orderId, DateTime now, CancellationToken cancellationToken)
+    {
         var items = await dbContext.OrderItems
             .AsNoTracking()
             .Where(item => item.OrderId == orderId)
             .OrderBy(item => item.ProductId)
             .ToListAsync(cancellationToken);
 
-        // The stock goes back exactly once, because only one call gets past the status check above.
         foreach (var item in items)
         {
             var productId = item.ProductId;
@@ -179,9 +242,6 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
                         .SetProperty(product => product.UpdatedAt, now),
                     cancellationToken);
         }
-
-        await transaction.CommitAsync(cancellationToken);
-        return true;
     }
 
     public Task<List<Order>> GetByUserAsync(Guid userId, CancellationToken cancellationToken)

@@ -6,7 +6,9 @@ using FurnitureEcommerce.Application.Common.Exceptions;
 using FurnitureEcommerce.Application.Orders;
 using FurnitureEcommerce.Application.Payments;
 using FurnitureEcommerce.Domain.Entities;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace FurnitureEcommerce.UnitTests.Orders;
 
@@ -19,6 +21,7 @@ public class OrderServiceTests
     private readonly IAddressRepository addressRepository = Substitute.For<IAddressRepository>();
     private readonly IIdentityService identityService = Substitute.For<IIdentityService>();
     private readonly IPaymentGateway gateway = Substitute.For<IPaymentGateway>();
+    private readonly FixedClock clock = new();
     private readonly OrderService service;
 
     private readonly Address address = new()
@@ -43,6 +46,8 @@ public class OrderServiceTests
             identityService,
             gateway,
             new PaymentSettings("http://api/callback", "http://frontend"),
+            clock,
+            NullLogger<OrderService>.Instance,
             new CreateOrderRequestValidator());
 
         identityService.GetUserAsync(UserId)
