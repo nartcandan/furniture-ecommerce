@@ -6,7 +6,7 @@ import { login } from '@/api/auth'
 import { FormField } from '@/components/FormField'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/features/auth/authStore'
 import { showApiError } from '@/lib/formErrors'
 
@@ -37,11 +37,12 @@ export function LoginPage() {
   })
 
   return (
-    <Card className="mx-auto w-full max-w-sm">
+    <Card className="mx-auto mt-4 w-full max-w-md [--card-spacing:--spacing(7)]">
       <CardHeader>
         <CardTitle>
-          <h1>Sign in</h1>
+          <h1 className="text-2xl font-semibold">Welcome back</h1>
         </CardTitle>
+        <CardDescription>Sign in to see your orders and check out.</CardDescription>
       </CardHeader>
       <form onSubmit={onSubmit} noValidate>
         <CardContent className="grid gap-4">
@@ -65,8 +66,8 @@ export function LoginPage() {
             {...register('password')}
           />
         </CardContent>
-        <CardFooter className="mt-6 flex-col items-stretch gap-3">
-          <Button type="submit" disabled={isSubmitting}>
+        <CardFooter className="mt-7 flex-col items-stretch gap-4">
+          <Button type="submit" size="lg" className="h-10 text-base" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in…' : 'Sign in'}
           </Button>
           <p className="text-center text-sm text-muted-foreground">

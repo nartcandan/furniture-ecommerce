@@ -10,7 +10,7 @@ export function AccountPage() {
 
   return (
     <section>
-      <h1 className="font-heading text-2xl font-semibold">My account</h1>
+      <h1 className="text-3xl font-semibold">My account</h1>
       <dl className="mt-4 grid max-w-md grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
         <dt className="text-muted-foreground">Name</dt>
         <dd>

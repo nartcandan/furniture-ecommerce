@@ -20,6 +20,7 @@ export function FormField({ label, error, id, ...inputProps }: FormFieldProps) {
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
+        className="h-10 bg-background"
         {...inputProps}
       />
       {error && (

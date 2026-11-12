@@ -7,7 +7,7 @@ import { ApiError } from '@/api/client'
 import { FormField } from '@/components/FormField'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/features/auth/authStore'
 import { showApiError } from '@/lib/formErrors'
 
@@ -62,11 +62,12 @@ export function RegisterPage() {
   })
 
   return (
-    <Card className="mx-auto w-full max-w-sm">
+    <Card className="mx-auto mt-4 w-full max-w-md [--card-spacing:--spacing(7)]">
       <CardHeader>
         <CardTitle>
-          <h1>Create an account</h1>
+          <h1 className="text-2xl font-semibold">Create an account</h1>
         </CardTitle>
+        <CardDescription>It takes a minute, and you can order right away.</CardDescription>
       </CardHeader>
       <form onSubmit={onSubmit} noValidate>
         <CardContent className="grid gap-4">
@@ -111,8 +112,8 @@ export function RegisterPage() {
             {...register('confirmPassword')}
           />
         </CardContent>
-        <CardFooter className="mt-6 flex-col items-stretch gap-3">
-          <Button type="submit" disabled={isSubmitting}>
+        <CardFooter className="mt-7 flex-col items-stretch gap-4">
+          <Button type="submit" size="lg" className="h-10 text-base" disabled={isSubmitting}>
             {isSubmitting ? 'Creating account…' : 'Create account'}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
