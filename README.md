@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** The backend is complete. The React frontend is the next step and is not built yet.
+> **Status:** The backend is complete. The React frontend is in progress: so far it only lists the categories.
 
 ## What works
 
@@ -71,6 +71,18 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download) and Docker.
 The API runs at `http://localhost:5068`, and the interactive API reference is at `http://localhost:5068/scalar`.
 
 To stop PostgreSQL, run `docker compose down` from the project root. Your data is kept.
+
+## Running the frontend locally
+
+You need [Node.js](https://nodejs.org) 22.12 or newer, and the API running as described above.
+
+```shell
+cd frontend
+npm install
+npm run dev
+```
+
+The store opens at `http://localhost:5173`. The API accepts browser requests only from this address (`Frontend:BaseUrl` in `appsettings.json`), so the dev server does not move to another port if this one is taken.
 
 ## Using the API
 

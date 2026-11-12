@@ -24,6 +24,16 @@ if (builder.Configuration.GetValue("Reconciliation:Enabled", true))
     builder.Services.AddHostedService<OrderReconciliationWorker>();
 }
 
+// The frontend runs on another origin. It sends the token in a header, so cookies are not allowed.
+var frontendOrigin = new Uri(
+    builder.Configuration["Frontend:BaseUrl"]
+        ?? throw new InvalidOperationException("'Frontend:BaseUrl' is not configured."))
+    .GetLeftPart(UriPartial.Authority);
+builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
+    .WithOrigins(frontendOrigin)
+    .AllowAnyHeader()
+    .AllowAnyMethod()));
+
 builder.Services.AddProblemDetails();
 builder.Services
     .AddControllers(options =>
@@ -66,6 +76,8 @@ app.UseStaticFiles(new StaticFileOptions
     OnPrepareResponse = context =>
         context.Context.Response.Headers.XContentTypeOptions = "nosniff"
 });
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
