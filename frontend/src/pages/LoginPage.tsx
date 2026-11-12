@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form'
 import { Link, useLocation } from 'react-router'
 import { z } from 'zod'
 import { login } from '@/api/auth'
+import { FormError } from '@/components/FormError'
 import { FormField } from '@/components/FormField'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -46,11 +46,7 @@ export function LoginPage() {
       </CardHeader>
       <form onSubmit={onSubmit} noValidate>
         <CardContent className="grid gap-4">
-          {errors.root && (
-            <Alert variant="destructive">
-              <AlertDescription>{errors.root.message}</AlertDescription>
-            </Alert>
-          )}
+          <FormError message={errors.root?.message} />
           <FormField
             label="Email"
             type="email"

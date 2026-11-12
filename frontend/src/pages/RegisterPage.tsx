@@ -4,8 +4,8 @@ import { Link, useLocation } from 'react-router'
 import { z } from 'zod'
 import { register as registerAccount } from '@/api/auth'
 import { ApiError } from '@/api/client'
+import { FormError } from '@/components/FormError'
 import { FormField } from '@/components/FormField'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -71,11 +71,7 @@ export function RegisterPage() {
       </CardHeader>
       <form onSubmit={onSubmit} noValidate>
         <CardContent className="grid gap-4">
-          {errors.root && (
-            <Alert variant="destructive">
-              <AlertDescription>{errors.root.message}</AlertDescription>
-            </Alert>
-          )}
+          <FormError message={errors.root?.message} />
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               label="First name"
