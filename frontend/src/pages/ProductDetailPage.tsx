@@ -6,6 +6,7 @@ import { ApiError } from '@/api/client'
 import { getProduct, type Product } from '@/api/products'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AddToCart } from '@/features/cart/AddToCart'
 import { ImagePlaceholder } from '@/features/catalog/ProductCard'
 import { categoryPath } from '@/features/catalog/useCategories'
 import { formatNumber, formatPrice } from '@/lib/format'
@@ -226,7 +227,12 @@ export function ProductDetailPage() {
             </p>
           )}
 
-          <ul className="mt-8 grid gap-3 rounded-2xl bg-secondary p-5 text-sm">
+          <div className="mt-8">
+            {/* The key resets the quantity when the address changes to another product. */}
+            <AddToCart key={data.id} product={data} />
+          </div>
+
+          <ul className="mt-6 grid gap-3 rounded-2xl bg-secondary p-5 text-sm">
             <li className="flex items-center gap-3">
               <Truck aria-hidden className="size-5 shrink-0 text-primary" />
               Free delivery anywhere in Türkiye

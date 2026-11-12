@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, User } from 'lucide-react'
+import { ChevronDown, LogOut, ShoppingBag, User } from 'lucide-react'
 import { Link, NavLink, useSearchParams } from 'react-router'
 import { Logo } from '@/components/Logo'
 import { SearchBox } from '@/components/SearchBox'
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore, useSession } from '@/features/auth/authStore'
+import { useCart } from '@/features/cart/useCart'
 import { categoryPath, useCategories } from '@/features/catalog/useCategories'
 import { cn } from '@/lib/utils'
 
@@ -66,6 +67,26 @@ function AccountMenu() {
   )
 }
 
+function CartLink() {
+  const count = useCart().data?.totalQuantity ?? 0
+
+  return (
+    <Button asChild variant="ghost" size="icon-lg" className="relative size-10">
+      <Link to="/cart" aria-label={count > 0 ? `Cart, ${count} ${count === 1 ? 'item' : 'items'}` : 'Cart'}>
+        <ShoppingBag aria-hidden className="size-5" />
+        {count > 0 && (
+          <span
+            aria-hidden
+            className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-highlight px-1 text-[0.6875rem] leading-none font-semibold text-white tabular-nums"
+          >
+            {count > 99 ? '99+' : count}
+          </span>
+        )}
+      </Link>
+    </Button>
+  )
+}
+
 const categoryLinkClass =
   'shrink-0 border-b-2 border-transparent py-3 text-sm text-muted-foreground transition-colors hover:text-foreground'
 const activeCategoryLinkClass = 'border-primary font-medium text-foreground'
@@ -114,7 +135,10 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Logo />
         <SearchBox className="hidden max-w-md flex-1 md:block" />
-        <AccountMenu />
+        <div className="flex items-center gap-1">
+          <AccountMenu />
+          <CartLink />
+        </div>
       </div>
       <div className="px-4 pb-3 md:hidden">
         <SearchBox />

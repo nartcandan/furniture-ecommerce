@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** The backend is complete. The React frontend is in progress: so far it has registration, sign-in, the product list with search, filters and sorting, and the product page. The cart and checkout are next.
+> **Status:** The backend is complete. The React frontend is in progress: so far it has registration, sign-in, the product list with search, filters and sorting, the product page and the cart. Checkout is next.
 
 ## What works
 
