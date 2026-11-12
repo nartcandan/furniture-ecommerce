@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, ShoppingBag, User } from 'lucide-react'
+import { ChevronDown, LogOut, Package, ShoppingBag, User } from 'lucide-react'
 import { Link, NavLink, useSearchParams } from 'react-router'
 import { Logo } from '@/components/Logo'
 import { SearchBox } from '@/components/SearchBox'
@@ -56,6 +56,12 @@ function AccountMenu() {
           <Link to="/account">
             <User aria-hidden />
             My account
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/orders">
+            <Package aria-hidden />
+            My orders
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={clearSession}>

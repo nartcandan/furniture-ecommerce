@@ -44,6 +44,11 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link to="/orders" className={linkClass}>
+                My orders
+              </Link>
+            </li>
+            <li>
               <Link to="/login" className={linkClass}>
                 Sign in
               </Link>

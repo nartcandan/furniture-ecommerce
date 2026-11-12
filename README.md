@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** The backend is complete. The React frontend is in progress: so far it has registration, sign-in, the product list with search, filters and sorting, the product page and the cart. Checkout is next.
+> **Status:** The backend is complete. The storefront is working from end to end: browsing, the cart, checkout with payment, order history and cancellation. The admin panel is not built yet.
 
 ## What works
 
@@ -133,7 +133,7 @@ The response of `POST /api/orders` contains `paymentPageUrl`, an iyzico payment 
 - A successful payment sets the order to `Paid` and takes the ordered quantities out of the cart. A failed one sets it to `PaymentFailed` and puts the items back in stock.
 - The callback can arrive any number of times. Only the first one changes anything.
 - If money arrives for an order that is no longer waiting for payment, the payment is cancelled at iyzico right away.
-- At the end the browser is sent to `Frontend:BaseUrl` (`http://localhost:5173/orders/{id}?payment=success`). The frontend is not built yet, so the browser shows a connection error there. Check the result with `GET /api/orders/{id}`.
+- At the end the browser is sent to `Frontend:BaseUrl` (`http://localhost:5173/orders/{id}?payment=success`). That page reads the order from the API and shows its real status, so it does not depend on the value in the address.
 
 ### Cancelling an order
 

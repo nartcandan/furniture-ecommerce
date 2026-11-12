@@ -144,7 +144,7 @@ export function ProductsPage() {
             value={filters.sort}
             onValueChange={(sort) => applyFilters({ sort: sort as ProductSort })}
           >
-            <SelectTrigger aria-label="Sort by" className="h-10 w-52 bg-card">
+            <SelectTrigger aria-label="Sort by" className="w-52 bg-card data-[size=default]:h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent align="end">

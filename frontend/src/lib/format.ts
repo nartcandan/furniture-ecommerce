@@ -9,3 +9,19 @@ export function formatPrice(amount: number): string {
 export function formatNumber(value: number): string {
   return numberFormat.format(value)
 }
+
+const dateTimeFormat = new Intl.DateTimeFormat('en-GB', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'Europe/Istanbul',
+})
+
+/** Dates from the API are UTC. They are shown in Türkiye time, which is also what the cancellation day follows. */
+export function formatDateTime(isoDate: string): string {
+  return dateTimeFormat.format(new Date(isoDate))
+}
+
+/** A short order number people can read out. The full id stays in the address. */
+export function orderNumber(id: string): string {
+  return id.replaceAll('-', '').slice(-8).toUpperCase()
+}
