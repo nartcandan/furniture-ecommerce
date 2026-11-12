@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useId } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import type { Address, AddressInput } from '@/api/addresses'
 import { FormError } from '@/components/FormError'
@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { provinces } from '@/data/provinces'
+import { districtsByProvince, provinces } from '@/data/districts'
 import { showApiError } from '@/lib/formErrors'
 import { useSaveAddress } from './useAddresses'
 
@@ -24,22 +24,28 @@ const required = (message: string, max: number) =>
 
 // The same rules as the API. People write phone numbers with spaces, dashes and brackets, so those are
 // removed before the number is checked and sent.
-const schema = z.object({
-  title: required('Give this address a name, for example Home.', 50),
-  recipientFirstName: required('Enter the first name.', 100),
-  recipientLastName: required('Enter the last name.', 100),
-  phoneNumber: z
-    .string()
-    .transform((value) => value.replace(/[\s\-()]/g, ''))
-    .pipe(z.string().regex(/^\+?[0-9]{10,15}$/, 'Enter 10 to 15 digits, for example 0532 123 45 67.')),
-  city: z.string().min(1, 'Choose a province.'),
-  district: required('Enter the district.', 50),
-  addressLine: required('Enter the street, building and door number.', 500),
-  postalCode: z
-    .string()
-    .trim()
-    .regex(/^([0-9]{5})?$/, 'A postal code has five digits.'),
-})
+const schema = z
+  .object({
+    title: required('Give this address a name, for example Home.', 50),
+    recipientFirstName: required('Enter the first name.', 100),
+    recipientLastName: required('Enter the last name.', 100),
+    phoneNumber: z
+      .string()
+      .transform((value) => value.replace(/[\s\-()]/g, ''))
+      .pipe(z.string().regex(/^\+?[0-9]{10,15}$/, 'Enter 10 to 15 digits, for example 0532 123 45 67.')),
+    city: z.string().min(1, 'Choose a province.'),
+    district: z.string().min(1, 'Choose a district.'),
+    addressLine: required('Enter the street, building and door number.', 500),
+    postalCode: z
+      .string()
+      .trim()
+      .regex(/^([0-9]{5})?$/, 'A postal code has five digits.'),
+  })
+  // An address saved before the district list existed may hold a district that is not in it.
+  .refine((values) => districtsByProvince[values.city]?.includes(values.district) ?? true, {
+    path: ['district'],
+    message: 'Choose a district of this province.',
+  })
 
 type AddressFormInput = z.input<typeof schema>
 type AddressFormOutput = z.output<typeof schema>
@@ -67,12 +73,14 @@ interface AddressFormProps {
 export function AddressForm({ address, defaultName, onSaved, onCancel }: AddressFormProps) {
   const save = useSaveAddress(address?.id)
   const cityId = useId()
+  const districtId = useId()
   const addressLineId = useId()
   const {
     register,
     control,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<AddressFormInput, unknown, AddressFormOutput>({
     resolver: zodResolver(schema),
@@ -87,6 +95,10 @@ export function AddressForm({ address, defaultName, onSaved, onCancel }: Address
       postalCode: address?.postalCode ?? '',
     },
   })
+
+  // The districts on offer are those of the chosen province. Without a province there is nothing to choose.
+  const city = useWatch({ control, name: 'city' })
+  const districts = districtsByProvince[city] ?? []
 
   const onSubmit = handleSubmit(async (values) => {
     const input: AddressInput = { ...values, postalCode: values.postalCode || null }
@@ -139,7 +151,14 @@ export function AddressForm({ address, defaultName, onSaved, onCancel }: Address
             control={control}
             name="city"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={field.value}
+                onValueChange={(province) => {
+                  field.onChange(province)
+                  // A district belongs to one province, so the old choice cannot stay.
+                  setValue('district', '', { shouldValidate: Boolean(errors.district) })
+                }}
+              >
                 <SelectTrigger
                   id={cityId}
                   ref={field.ref}
@@ -161,7 +180,40 @@ export function AddressForm({ address, defaultName, onSaved, onCancel }: Address
           />
           {errors.city && <p className="text-sm text-destructive">{errors.city.message}</p>}
         </div>
-        <FormField label="District" error={errors.district?.message} {...register('district')} />
+        <div className="grid gap-1.5">
+          <Label htmlFor={districtId}>District</Label>
+          <Controller
+            control={control}
+            name="district"
+            render={({ field }) => (
+              // The key empties the box when the province changes: an empty value alone keeps the old text.
+              <Select
+                key={city}
+                value={districts.includes(field.value) ? field.value : ''}
+                onValueChange={field.onChange}
+                disabled={districts.length === 0}
+              >
+                <SelectTrigger
+                  id={districtId}
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                  aria-invalid={errors.district ? true : undefined}
+                  className="w-full bg-background data-[size=default]:h-10"
+                >
+                  <SelectValue placeholder={city ? 'Choose…' : 'Choose a province first'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {districts.map((district) => (
+                    <SelectItem key={district} value={district}>
+                      {district}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.district && <p className="text-sm text-destructive">{errors.district.message}</p>}
+        </div>
       </div>
 
       <div className="grid gap-1.5">
