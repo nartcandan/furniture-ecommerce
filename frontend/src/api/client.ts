@@ -1,3 +1,5 @@
+import { useAuthStore } from '@/features/auth/authStore'
+
 const baseUrl: string = import.meta.env.VITE_API_URL ?? 'http://localhost:5068'
 
 /** The error body the API sends (RFC 7807). `errors` is filled for validation errors. */
@@ -9,7 +11,7 @@ interface ProblemDetails {
 
 export class ApiError extends Error {
   readonly status: number
-  /** Validation messages by field name. Empty for other errors. */
+  /** Validation messages by the API's field name (for example `FirstName`). Empty for other errors. */
   readonly fieldErrors: Record<string, string[]>
 
   constructor(status: number, message: string, fieldErrors: Record<string, string[]> = {}) {
@@ -24,11 +26,12 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   /** Sent as JSON, or as multipart when it is a FormData. */
   body?: unknown
-  token?: string | null
 }
 
+/** Sends a request to the API. The token of the signed-in user is added automatically. */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, token } = options
+  const { method = 'GET', body } = options
+  const token = useAuthStore.getState().session?.token
   const headers = new Headers()
   const isForm = body instanceof FormData
 
@@ -48,6 +51,15 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     })
   } catch {
     throw new ApiError(0, 'The server could not be reached. Please try again.')
+  }
+
+  if (response.status === 401 && token) {
+    // The token expired or is no longer valid. Without a session, protected pages send the user to sign in.
+    // The token is compared first, so a late answer cannot sign out a user who has just signed in again.
+    if (useAuthStore.getState().session?.token === token) {
+      useAuthStore.getState().clearSession()
+    }
+    throw new ApiError(401, 'Your session has expired. Please sign in again.')
   }
 
   if (!response.ok) {

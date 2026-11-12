@@ -33,6 +33,7 @@ public class AuthTests(ApiFactory factory) : ApiTestBase(factory)
         Assert.Equal(Email, auth!.User.Email);
         Assert.Equal("Ayse", auth.User.FirstName);
         Assert.NotEqual(Guid.Empty, auth.User.Id);
+        Assert.Equal([Roles.Customer], auth.User.Roles);
         Assert.True(auth.ExpiresAt > DateTime.UtcNow);
 
         var token = new JsonWebTokenHandler().ReadJsonWebToken(auth.AccessToken);
@@ -110,6 +111,16 @@ public class AuthTests(ApiFactory factory) : ApiTestBase(factory)
 
         Assert.Equal(Email, auth!.User.Email);
         Assert.NotEmpty(auth.AccessToken);
+    }
+
+    [Fact]
+    public async Task Login_ReturnsTheAdminRole_ForTheAdmin()
+    {
+        var response = await LoginAsync(ApiFactory.AdminEmail, ApiFactory.AdminPassword);
+
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+        Assert.Equal([Roles.Admin], auth!.User.Roles);
     }
 
     [Fact]

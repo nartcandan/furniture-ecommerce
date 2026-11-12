@@ -40,6 +40,6 @@ public class AuthService(
         return new AuthResponse(
             token.Value,
             token.ExpiresAt,
-            new UserResponse(user.Id, user.Email, user.FirstName, user.LastName));
+            new UserResponse(user.Id, user.Email, user.FirstName, user.LastName, user.Roles));
     }
 }

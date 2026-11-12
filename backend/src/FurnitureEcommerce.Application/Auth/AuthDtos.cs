@@ -4,7 +4,13 @@ public record RegisterRequest(string FirstName, string LastName, string Email, s
 
 public record LoginRequest(string Email, string Password);
 
-public record UserResponse(Guid Id, string Email, string FirstName, string LastName);
+/// <param name="Roles">Lets the frontend choose what to show. The API itself checks the roles in the token.</param>
+public record UserResponse(
+    Guid Id,
+    string Email,
+    string FirstName,
+    string LastName,
+    IReadOnlyList<string> Roles);
 
 public record AuthResponse(string AccessToken, DateTime ExpiresAt, UserResponse User);
 
