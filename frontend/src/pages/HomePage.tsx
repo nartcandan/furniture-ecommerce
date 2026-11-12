@@ -1,9 +1,12 @@
+import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, CreditCard, RotateCcw, Truck } from 'lucide-react'
 import { Link } from 'react-router'
+import { getProducts } from '@/api/products'
 import { HeroIllustration } from '@/components/HeroIllustration'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ProductCard, ProductCardSkeleton } from '@/features/catalog/ProductCard'
 import { categoryPath, useCategories } from '@/features/catalog/useCategories'
 import { cn } from '@/lib/utils'
 
@@ -127,11 +130,54 @@ function Categories() {
   )
 }
 
+const NEW_ARRIVALS = 4
+
+function NewArrivals() {
+  const products = useQuery({
+    queryKey: ['products', 'new-arrivals'],
+    queryFn: () => getProducts({ sort: 'newest', pageSize: NEW_ARRIVALS }),
+  })
+
+  // The section is an extra. Without products, or if they fail to load, the page is fine without it.
+  if (products.isError || products.data?.items.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="mt-16">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-3xl font-semibold">New arrivals</h2>
+        <Link
+          to="/products"
+          className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline hover:underline-offset-4"
+        >
+          See all products
+          <ArrowRight aria-hidden className="size-4" />
+        </Link>
+      </div>
+      <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-8 lg:grid-cols-4">
+        {products.isPending
+          ? Array.from({ length: NEW_ARRIVALS }, (_, index) => (
+              <li key={index}>
+                <ProductCardSkeleton />
+              </li>
+            ))
+          : products.data.items.map((product) => (
+              <li key={product.id}>
+                <ProductCard product={product} />
+              </li>
+            ))}
+      </ul>
+    </section>
+  )
+}
+
 export function HomePage() {
   return (
     <>
       <Hero />
       <Promises />
+      <NewArrivals />
       <Categories />
     </>
   )

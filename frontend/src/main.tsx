@@ -9,6 +9,8 @@ import { AccountPage } from '@/pages/AccountPage'
 import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { ProductDetailPage } from '@/pages/ProductDetailPage'
+import { ProductsPage } from '@/pages/ProductsPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import './index.css'
 
@@ -17,6 +19,8 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: '/', element: <HomePage /> },
+      { path: '/products', element: <ProductsPage /> },
+      { path: '/products/:slug', element: <ProductDetailPage /> },
       {
         element: <GuestOnly />,
         children: [

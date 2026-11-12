@@ -1,6 +1,7 @@
 import { ChevronDown, LogOut, User } from 'lucide-react'
 import { Link, NavLink, useSearchParams } from 'react-router'
 import { Logo } from '@/components/Logo'
+import { SearchBox } from '@/components/SearchBox'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -112,7 +113,11 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Logo />
+        <SearchBox className="hidden max-w-md flex-1 md:block" />
         <AccountMenu />
+      </div>
+      <div className="px-4 pb-3 md:hidden">
+        <SearchBox />
       </div>
       <CategoryNav />
     </header>

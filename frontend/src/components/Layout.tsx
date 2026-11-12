@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router'
+import { Outlet, ScrollRestoration } from 'react-router'
 import { SiteFooter } from '@/components/SiteFooter'
 import { SiteHeader } from '@/components/SiteHeader'
 
@@ -10,6 +10,8 @@ export function Layout() {
         <Outlet />
       </main>
       <SiteFooter />
+      {/* A new page opens at the top. Going back returns to where the user was. */}
+      <ScrollRestoration />
     </div>
   )
 }
