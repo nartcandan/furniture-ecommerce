@@ -168,7 +168,7 @@ export function AddressForm({ address, defaultName, onSaved, onCancel }: Address
                 >
                   <SelectValue placeholder="Choose…" />
                 </SelectTrigger>
-                <SelectContent className="max-h-72">
+                <SelectContent position="popper" className="max-h-72">
                   {provinces.map((province) => (
                     <SelectItem key={province} value={province}>
                       {province}
@@ -202,7 +202,7 @@ export function AddressForm({ address, defaultName, onSaved, onCancel }: Address
                 >
                   <SelectValue placeholder={city ? 'Choose…' : 'Choose a province first'} />
                 </SelectTrigger>
-                <SelectContent className="max-h-72">
+                <SelectContent position="popper" className="max-h-72">
                   {districts.map((district) => (
                     <SelectItem key={district} value={district}>
                       {district}
