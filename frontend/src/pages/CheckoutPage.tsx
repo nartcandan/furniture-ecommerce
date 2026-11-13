@@ -1,11 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Lock, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router'
 import type { Address } from '@/api/addresses'
 import type { Cart } from '@/api/cart'
-import { ApiError } from '@/api/client'
-import { createOrder } from '@/api/orders'
+import { createOrder, getOrder, getOrders } from '@/api/orders'
 import { FormError } from '@/components/FormError'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -23,7 +22,8 @@ import { AddressText } from '@/features/addresses/AddressText'
 import { useAddresses } from '@/features/addresses/useAddresses'
 import { useSession } from '@/features/auth/authStore'
 import { useCart } from '@/features/cart/useCart'
-import { formatPrice } from '@/lib/format'
+import { UnpaidOrderActions } from '@/features/orders/UnpaidOrderActions'
+import { formatDateTime, formatPrice, orderNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 function AddressChoice({
@@ -87,11 +87,44 @@ function Summary({ cart }: { cart: Cart }) {
   )
 }
 
+/**
+ * A customer can have one order waiting for payment at a time. While there is one, checkout offers to
+ * finish or cancel it, because a new order would be refused.
+ */
+function UnpaidOrderNotice({ orderId }: { orderId: string }) {
+  const order = useQuery({ queryKey: ['order', orderId], queryFn: () => getOrder(orderId) })
+
+  return (
+    <div className="mt-6 rounded-xl border border-highlight/30 bg-card p-4">
+      <h3 className="font-sans text-base font-semibold tracking-normal">
+        You have an order waiting for payment
+      </h3>
+      {order.isPending && <Skeleton className="mt-3 h-16" />}
+      {order.isError && <p className="mt-2 text-sm text-destructive">{order.error.message}</p>}
+      {order.data && (
+        <>
+          <p className="mt-1 text-sm text-muted-foreground">
+            <Link to={`/orders/${order.data.id}`} className="font-medium text-foreground underline underline-offset-4">
+              Order #{orderNumber(order.data.id)}
+            </Link>{' '}
+            for {formatPrice(order.data.totalAmount)}, placed on {formatDateTime(order.data.createdAt)}.{' '}
+            {order.data.paymentPageUrl
+              ? 'Finish paying for it, or cancel it to place a new order.'
+              : 'Its payment page has expired. Cancel it to place a new order.'}
+          </p>
+          <UnpaidOrderActions order={order.data} className="mt-4" />
+        </>
+      )}
+    </div>
+  )
+}
+
 export function CheckoutPage() {
   const user = useSession()?.user
   const queryClient = useQueryClient()
   const cart = useCart()
   const addresses = useAddresses()
+  const orders = useQuery({ queryKey: ['orders'], queryFn: getOrders })
   const [chosenId, setChosenId] = useState<string>()
   const [isAdding, setIsAdding] = useState(false)
 
@@ -101,9 +134,27 @@ export function CheckoutPage() {
       // The payment page belongs to iyzico, so this leaves the app. iyzico sends the browser back to the order.
       window.location.assign(order.paymentPageUrl ?? `/orders/${order.id}`)
     },
-    // A refusal usually means the stock or a price changed. The cart shows what.
-    onError: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
+    // A refusal usually means the stock or a price changed, and the cart shows what. It can also mean
+    // that an order is already waiting for payment, which the order list shows.
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: ['cart'] })
+      void queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
   })
+
+  // The back button on the payment page brings this page back exactly as it was left, with the button still
+  // saying that the payment page is opening. The page is put back to work and its data is read again.
+  const resetPlaceOrder = placeOrder.reset
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        resetPlaceOrder()
+        void queryClient.invalidateQueries()
+      }
+    }
+    window.addEventListener('pageshow', handlePageShow)
+    return () => window.removeEventListener('pageshow', handlePageShow)
+  }, [resetPlaceOrder, queryClient])
 
   if (cart.isPending || addresses.isPending) {
     return (
@@ -132,11 +183,10 @@ export function CheckoutPage() {
   // The first address is chosen until the user picks another, also right after the first one is added.
   const selectedId =
     addresses.data.find((address) => address.id === chosenId)?.id ?? addresses.data[0]?.id
-  const hasPendingOrder =
-    placeOrder.error instanceof ApiError &&
-    placeOrder.error.status === 409 &&
-    placeOrder.error.message.includes('waiting for payment')
   const isBusy = placeOrder.isPending || isLeaving
+  const unpaidOrder = isLeaving
+    ? undefined
+    : orders.data?.find((order) => order.status === 'PendingPayment')
   const defaultName = user && { firstName: user.firstName, lastName: user.lastName }
 
   function handleSaved(address: Address) {
@@ -206,29 +256,31 @@ export function CheckoutPage() {
             </p>
           )}
 
-          {placeOrder.error && (
-            <div className="mt-5 grid gap-2">
-              <FormError message={placeOrder.error.message} />
-              {hasPendingOrder && (
-                <Link to="/orders" className="text-sm font-medium underline underline-offset-4">
-                  See my orders
-                </Link>
+          {unpaidOrder ? (
+            // After the order is cancelled the list is read again, and the pay button comes back.
+            <UnpaidOrderNotice key={unpaidOrder.id} orderId={unpaidOrder.id} />
+          ) : (
+            <>
+              {placeOrder.error && (
+                <div className="mt-5">
+                  <FormError message={placeOrder.error.message} />
+                </div>
               )}
-            </div>
-          )}
 
-          <Button
-            size="lg"
-            className="mt-6 h-12 w-full text-base"
-            disabled={isBusy || !selectedId || !cart.data.canCheckout}
-            onClick={() => selectedId && placeOrder.mutate(selectedId)}
-          >
-            <Lock aria-hidden />
-            {isBusy ? 'Opening the payment page…' : `Pay ${formatPrice(cart.data.totalAmount)}`}
-          </Button>
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            You pay by card on iyzico’s secure payment page.
-          </p>
+              <Button
+                size="lg"
+                className="mt-6 h-12 w-full text-base"
+                disabled={isBusy || !selectedId || !cart.data.canCheckout}
+                onClick={() => selectedId && placeOrder.mutate(selectedId)}
+              >
+                <Lock aria-hidden />
+                {isBusy ? 'Opening the payment page…' : `Pay ${formatPrice(cart.data.totalAmount)}`}
+              </Button>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                You pay by card on iyzico’s secure payment page.
+              </p>
+            </>
+          )}
         </aside>
       </div>
     </div>

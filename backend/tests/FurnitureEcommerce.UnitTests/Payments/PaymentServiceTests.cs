@@ -149,6 +149,20 @@ public class PaymentServiceTests
     }
 
     [Fact]
+    public async Task ReportsRefunded_WhenLatePaymentWasAlreadyRefundedByAnEarlierRequest()
+    {
+        var closed = NewOrder(OrderStatus.Cancelled);
+        repository.GetByPaymentTokenAsync(Token, Arg.Any<CancellationToken>()).Returns(closed);
+        GatewayReports(CheckoutResult.Paid(PaymentId, 1250.50m, closed.Id.ToString()));
+        gateway.CancelPaymentAsync(PaymentId, Arg.Any<CancellationToken>())
+            .Returns(new PaymentCancellation(false, "Process has been locked before (8514)", WasAlreadyCancelled: true));
+
+        var result = await HandleAsync();
+
+        Assert.Equal(PaymentOutcome.Refunded, result.Outcome);
+    }
+
+    [Fact]
     public async Task ReportsRefundFailed_WhenLatePaymentCannotBeRefunded()
     {
         var closed = NewOrder(OrderStatus.Cancelled);

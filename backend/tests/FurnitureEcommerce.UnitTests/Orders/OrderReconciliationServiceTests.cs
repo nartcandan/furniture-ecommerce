@@ -29,6 +29,7 @@ public class OrderReconciliationServiceTests
 
         Unpaid();
         Cancelling();
+        ClosedEarly();
     }
 
     private static Order NewOrder(OrderStatus status, string? token = "token", string? paymentId = null) => new()
@@ -52,6 +53,10 @@ public class OrderReconciliationServiceTests
         repository.GetCancellingUpdatedBeforeAsync(Arg.Any<DateTime>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(orders.ToList());
 
+    private void ClosedEarly(params Order[] orders) =>
+        repository.GetPaymentRecheckDueAsync(Arg.Any<DateTime>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(orders.ToList());
+
     private void CallbackGives(Order order, PaymentOutcome outcome) =>
         paymentService.HandleCallbackAsync(order.PaymentToken, Arg.Any<CancellationToken>())
             .Returns(new PaymentCallbackResult(order.Id, outcome));
@@ -67,6 +72,63 @@ public class OrderReconciliationServiceTests
             Now.UtcDateTime.AddMinutes(-35), 50, Arg.Any<CancellationToken>());
         await repository.Received(1).GetCancellingUpdatedBeforeAsync(
             Now.UtcDateTime.AddMinutes(-2), 50, Arg.Any<CancellationToken>());
+        await repository.Received(1).GetPaymentRecheckDueAsync(Now.UtcDateTime, 50, Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    // Nothing was paid on the page.
+    [InlineData(PaymentOutcome.Pending)]
+    [InlineData(PaymentOutcome.Failed)]
+    // A late payment was found. The callback code has already tried to refund it.
+    [InlineData(PaymentOutcome.Refunded)]
+    [InlineData(PaymentOutcome.RefundFailed)]
+    public async Task RechecksClosedOrderOnce_WhateverTheProviderSays(PaymentOutcome outcome)
+    {
+        var order = NewOrder(OrderStatus.Cancelled);
+        ClosedEarly(order);
+        CallbackGives(order, outcome);
+
+        var summary = await RunAsync();
+
+        Assert.Equal(
+            new ReconciliationSummary(Closed: 0, Paid: 0, Cancelled: 0, RevertedToPaid: 0, Skipped: 0, Rechecked: 1),
+            summary);
+        await paymentService.Received(1).HandleCallbackAsync(order.PaymentToken, Arg.Any<CancellationToken>());
+        await repository.Received(1).ClearPaymentRecheckAsync(order.Id, Arg.Any<CancellationToken>());
+        // The order is closed already. The recheck never changes its status itself.
+        await repository.DidNotReceiveWithAnyArgs().TryCancelUnpaidAsync(default, default!, default);
+    }
+
+    [Fact]
+    public async Task KeepsTheRecheck_WhenProviderCannotBeReached()
+    {
+        var order = NewOrder(OrderStatus.Cancelled);
+        ClosedEarly(order);
+        CallbackGives(order, PaymentOutcome.ProviderUnreachable);
+
+        var summary = await RunAsync();
+
+        Assert.Equal(1, summary.Skipped);
+        Assert.Equal(0, summary.Rechecked);
+        await repository.DidNotReceiveWithAnyArgs().ClearPaymentRecheckAsync(default, default);
+    }
+
+    [Fact]
+    public async Task KeepsTheRecheck_WhenItThrows_AndContinuesWithTheNextOrder()
+    {
+        var broken = NewOrder(OrderStatus.Cancelled, token: "broken");
+        var healthy = NewOrder(OrderStatus.Cancelled, token: "healthy");
+        ClosedEarly(broken, healthy);
+        paymentService.HandleCallbackAsync("broken", Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("Database failure"));
+        CallbackGives(healthy, PaymentOutcome.Pending);
+
+        var summary = await RunAsync();
+
+        Assert.Equal(1, summary.Skipped);
+        Assert.Equal(1, summary.Rechecked);
+        await repository.DidNotReceive().ClearPaymentRecheckAsync(broken.Id, Arg.Any<CancellationToken>());
+        await repository.Received(1).ClearPaymentRecheckAsync(healthy.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]

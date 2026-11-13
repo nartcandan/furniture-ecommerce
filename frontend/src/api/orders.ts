@@ -22,7 +22,7 @@ export interface Order {
   id: string
   status: OrderStatus
   totalAmount: number
-  /** Where to send the customer to pay. Only present in the response that creates the order. */
+  /** The payment page. Present while the order waits for payment and the page is still open. */
   paymentPageUrl: string | null
   recipientFirstName: string
   recipientLastName: string
@@ -34,7 +34,7 @@ export interface Order {
   paymentError: string | null
   paidAt: string | null
   createdAt: string
-  /** True while the customer can still cancel: paid today and not shipped. */
+  /** True while the customer can still cancel: waiting for payment, or paid today and not shipped. */
   canCancel: boolean
   items: OrderItem[]
 }
@@ -61,7 +61,10 @@ export function createOrder(addressId: string): Promise<Order> {
   return apiRequest<Order>('/api/orders', { method: 'POST', body: { addressId } })
 }
 
-/** The order comes back as `Cancelled`, or as `Cancelling` when the refund is still being confirmed. */
+/**
+ * Cancels an order that waits for payment, or a paid one on the day of payment (with a refund).
+ * The order comes back as `Cancelled`, or as `Cancelling` when the refund is still being confirmed.
+ */
 export function cancelOrder(id: string): Promise<Order> {
   return apiRequest<Order>(`/api/orders/${id}/cancel`, { method: 'POST' })
 }

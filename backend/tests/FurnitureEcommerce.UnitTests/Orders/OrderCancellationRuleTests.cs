@@ -43,14 +43,59 @@ public class OrderCancellationRuleTests
         Assert.Equal(expected, order.CanBeCancelled(now));
     }
 
+    [Fact]
+    public void OrderWaitingForPayment_CanBeCancelled_AtAnyTime()
+    {
+        var order = NewOrder(OrderStatus.PendingPayment, paidAt: null);
+
+        Assert.True(order.CanBeCancelled(Utc(11, 10, 0)));
+        Assert.True(order.CanBeCancelled(Utc(12, 10, 0)));
+    }
+
     [Theory]
-    [InlineData(OrderStatus.PendingPayment)]
+    // The payment page was opened at 10:00 and lives for 30 minutes.
+    [InlineData(0, true)]
+    [InlineData(29, true)]
+    [InlineData(30, false)]
+    [InlineData(45, false)]
+    public void OrderWaitingForPayment_CanBePaid_UntilItsPaymentPageExpires(int minutesLater, bool expected)
+    {
+        var order = NewOrder(OrderStatus.PendingPayment, paidAt: null);
+        order.CreatedAt = Utc(11, 10, 0);
+        order.PaymentPageUrl = "https://pay/token";
+
+        Assert.Equal(expected, order.CanBePaid(Utc(11, 10, minutesLater), TimeSpan.FromMinutes(30)));
+    }
+
+    [Fact]
+    public void OrderWithoutPaymentPage_CannotBePaid()
+    {
+        var order = NewOrder(OrderStatus.PendingPayment, paidAt: null);
+        order.CreatedAt = Utc(11, 10, 0);
+
+        Assert.False(order.CanBePaid(Utc(11, 10, 1), TimeSpan.FromMinutes(30)));
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Paid)]
+    [InlineData(OrderStatus.PaymentFailed)]
+    [InlineData(OrderStatus.Cancelled)]
+    public void OrderThatIsNoLongerWaiting_CannotBePaid(OrderStatus status)
+    {
+        var order = NewOrder(status, paidAt: null);
+        order.CreatedAt = Utc(11, 10, 0);
+        order.PaymentPageUrl = "https://pay/token";
+
+        Assert.False(order.CanBePaid(Utc(11, 10, 1), TimeSpan.FromMinutes(30)));
+    }
+
+    [Theory]
     [InlineData(OrderStatus.PaymentFailed)]
     [InlineData(OrderStatus.Cancelling)]
     [InlineData(OrderStatus.Cancelled)]
     [InlineData(OrderStatus.Shipped)]
     [InlineData(OrderStatus.Delivered)]
-    public void OrderThatIsNotPaid_CannotBeCancelled(OrderStatus status)
+    public void ClosedOrShippedOrder_CannotBeCancelled(OrderStatus status)
     {
         var now = Utc(11, 10, 0);
         var order = NewOrder(status, now.AddMinutes(-5));

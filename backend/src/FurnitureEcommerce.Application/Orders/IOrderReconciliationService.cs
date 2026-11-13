@@ -15,7 +15,16 @@ public interface IOrderReconciliationService
 /// <param name="Cancelled">Orders whose refund was confirmed.</param>
 /// <param name="RevertedToPaid">Orders whose refund was refused, so they are paid orders again.</param>
 /// <param name="Skipped">Orders left for the next run because the provider gave no usable answer.</param>
-public record ReconciliationSummary(int Closed, int Paid, int Cancelled, int RevertedToPaid, int Skipped)
+/// <param name="Rechecked">
+/// Orders closed while their payment page was still open, now checked for a payment that arrived after all.
+/// </param>
+public record ReconciliationSummary(
+    int Closed,
+    int Paid,
+    int Cancelled,
+    int RevertedToPaid,
+    int Skipped,
+    int Rechecked = 0)
 {
-    public int Total => Closed + Paid + Cancelled + RevertedToPaid + Skipped;
+    public int Total => Closed + Paid + Cancelled + RevertedToPaid + Skipped + Rechecked;
 }

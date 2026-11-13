@@ -18,7 +18,7 @@ public class OrderReconciliationService(
     public async Task<ReconciliationSummary> RunOnceAsync(CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        int closed = 0, paid = 0, cancelled = 0, reverted = 0, skipped = 0;
+        int closed = 0, paid = 0, cancelled = 0, reverted = 0, skipped = 0, rechecked = 0;
 
         var unpaidOrders = await repository.GetPendingPaymentCreatedBeforeAsync(
             now - settings.PendingPaymentTimeout,
@@ -67,7 +67,59 @@ public class OrderReconciliationService(
             }
         }
 
-        return new ReconciliationSummary(closed, paid, cancelled, reverted, skipped);
+        var closedEarlyOrders = await repository.GetPaymentRecheckDueAsync(now, settings.BatchSize, cancellationToken);
+
+        foreach (var order in closedEarlyOrders)
+        {
+            try
+            {
+                if (await RecheckPaymentAsync(order, cancellationToken))
+                {
+                    rechecked++;
+                }
+                else
+                {
+                    skipped++;
+                }
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                skipped++;
+                logger.LogError(exception, "The payment of closed order {OrderId} could not be rechecked.", order.Id);
+            }
+        }
+
+        return new ReconciliationSummary(closed, paid, cancelled, reverted, skipped, rechecked);
+    }
+
+    /// <summary>
+    /// Looks for a payment that was made on the payment page after the order had been closed, for example
+    /// after the customer cancelled it. Returns false when the provider could not be asked.
+    /// </summary>
+    private async Task<bool> RecheckPaymentAsync(Order order, CancellationToken cancellationToken)
+    {
+        if (order.PaymentToken is not null)
+        {
+            // The same code as the callback. The order no longer waits for payment, so a payment
+            // found here is a late payment and is refunded.
+            var result = await paymentService.HandleCallbackAsync(order.PaymentToken, cancellationToken);
+
+            if (result.Outcome == PaymentOutcome.ProviderUnreachable)
+            {
+                return false;
+            }
+
+            if (result.Outcome is PaymentOutcome.Refunded or PaymentOutcome.RefundFailed)
+            {
+                logger.LogWarning(
+                    "A payment was found for order {OrderId} after it had been closed ({Outcome}).",
+                    order.Id, result.Outcome);
+            }
+        }
+
+        // The payment page has expired by now, so nothing more can arrive for this order.
+        await repository.ClearPaymentRecheckAsync(order.Id, cancellationToken);
+        return true;
     }
 
     private async Task<UnpaidResult> ResolveUnpaidAsync(Order order, CancellationToken cancellationToken)

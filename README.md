@@ -13,7 +13,7 @@ A single-seller online store for home furniture and decoration. Customers can br
 - **Cart:** stored in the database, always priced from the current catalog, with warnings when an item becomes unavailable.
 - **Orders:** an order copies the address and prices and takes its items out of stock in one transaction.
 - **Payment:** iyzico's hosted payment page (sandbox), with a callback that can safely arrive more than once.
-- **Cancellation:** the customer can cancel a paid order on the day of payment and gets a refund.
+- **Cancellation:** the customer can cancel a paid order on the day of payment and gets a refund, and can give up an order that is still waiting for payment.
 - **Admin orders:** listing, and marking orders as shipped and delivered.
 - **Background job:** closes orders that were never paid and finishes refunds that got no answer.
 
@@ -122,7 +122,7 @@ Add a product with `POST /api/cart/items` and a body such as `{ "productId": "..
 
 - The order copies the address, the product names and the current prices, so later changes do not affect it.
 - The items are taken out of stock in the same transaction. If any item is unavailable or short of stock, the request is rejected with `409 Conflict` and no stock changes.
-- A customer can have only one order waiting for payment. A second request, such as a double click, gets `409 Conflict`.
+- A customer can have only one order waiting for payment. A second request, such as a double click, gets `409 Conflict`. The customer can finish that order or cancel it, as described below.
 - The cart is kept until the order is paid.
 
 ### Payment
@@ -132,14 +132,19 @@ The response of `POST /api/orders` contains `paymentPageUrl`, an iyzico payment 
 - After the payment, iyzico sends the browser to `POST /api/payments/callback`. The API does not trust that request. It asks iyzico for the result and compares the paid amount with the order.
 - A successful payment sets the order to `Paid` and takes the ordered quantities out of the cart. A failed one sets it to `PaymentFailed` and puts the items back in stock.
 - The callback can arrive any number of times. Only the first one changes anything.
+- A customer who leaves the payment page can go back to it. While the order waits for payment and the page is still open, `GET /api/orders/{id}` returns `paymentPageUrl` too. The store shows it as "Continue to payment".
 - If money arrives for an order that is no longer waiting for payment, the payment is cancelled at iyzico right away.
 - At the end the browser is sent to `Frontend:BaseUrl` (`http://localhost:5173/orders/{id}?payment=success`). That page reads the order from the API and shows its real status, so it does not depend on the value in the address.
 
 ### Cancelling an order
 
-`POST /api/orders/{id}/cancel` cancels the whole order, refunds the payment at iyzico and puts the items back in stock.
+`POST /api/orders/{id}/cancel` cancels the whole order and puts the items back in stock. The `canCancel` field of an order shows whether it can be cancelled.
 
-- Only a `Paid` order can be cancelled, and only on the calendar day (Turkey time) it was paid, because iyzico cancels a payment only on that day. The `canCancel` field of an order shows whether this is still possible.
+**An order that is waiting for payment** is closed at once. Nothing was paid, so iyzico is not called, and the customer can place a new order right away. The payment page stays open at iyzico for a while. If the customer pays there after all, the payment is refunded, even if the browser never returns to the store (see the background job).
+
+**A paid order** is refunded:
+
+- It can be cancelled only on the calendar day (Turkey time) it was paid, because iyzico cancels a payment only on that day.
 - The order is first set to `Cancelling`, which stops it from being shipped while the refund is in progress.
 - If iyzico refuses the refund, the order goes back to `Paid` and the request gets `502 Bad Gateway`.
 - If iyzico cannot be reached, the result is unknown, so the order stays in `Cancelling` and the request gets `202 Accepted`. The background job finishes it.
@@ -148,7 +153,7 @@ The response of `POST /api/orders` contains `paymentPageUrl`, an iyzico payment 
 
 | Status | Meaning | Next |
 |---|---|---|
-| `PendingPayment` | Created, stock is held, waiting for the payment | `Paid`, `PaymentFailed`, `Cancelled` (not paid in time) |
+| `PendingPayment` | Created, stock is held, waiting for the payment | `Paid`, `PaymentFailed`, `Cancelled` (not paid in time, or cancelled by the customer) |
 | `PaymentFailed` | The payment failed, stock was given back | |
 | `Paid` | The payment arrived | `Shipped` (admin), `Cancelling` (customer, same day) |
 | `Cancelling` | The refund is in progress, the order cannot be shipped | `Cancelled`, or back to `Paid` if the refund is refused |
@@ -164,6 +169,7 @@ A payment can end without the API hearing about it: the customer closes the paym
 
 - An order that has waited for payment for more than 35 minutes is checked at iyzico. If it was paid after all, it becomes `Paid`. Otherwise it is closed and its items go back in stock. The limit is longer than the 30 minutes an iyzico payment page stays valid, so an order is never closed while it can still be paid.
 - An order that has been in `Cancelling` for more than 2 minutes gets its refund requested again. iyzico refuses to cancel the same payment twice, so this cannot refund twice. The order becomes `Cancelled`, or `Paid` again if iyzico refuses the refund.
+- An order that was closed while its payment page was still open, for example because the customer cancelled it, is checked at iyzico once more after the page has expired. A payment that was made on that page is refunded. Without this check, a customer who cancels, then pays, and closes the browser before it returns to the store would lose the money unnoticed.
 - If iyzico cannot be reached, the order is left as it is and tried again on the next run.
 
 The intervals are in the `Reconciliation` section of `appsettings.json`.

@@ -20,6 +20,12 @@ public class OrderService(
     ILogger<OrderService> logger,
     IValidator<CreateOrderRequest> createValidator) : IOrderService
 {
+    public const string CancelledByCustomerMessage = "Cancelled by the customer before payment.";
+
+    // The link to the payment page is withdrawn a little before the page expires, so that a customer
+    // who follows it does not arrive at a page that expires while the card number is being typed.
+    private static readonly TimeSpan PaymentPageMargin = TimeSpan.FromMinutes(2);
+
     public async Task<OrderResponse> CreateAsync(
         Guid userId,
         CreateOrderRequest request,
@@ -100,7 +106,7 @@ public class OrderService(
             throw new PaymentGatewayException("The payment could not be started. Nothing was charged, try again.");
         }
 
-        await repository.SetPaymentTokenAsync(order.Id, checkout.Token!, cancellationToken);
+        await repository.SetPaymentPageAsync(order.Id, checkout.Token!, checkout.PaymentPageUrl!, cancellationToken);
 
         return ToResponse(order, checkout.PaymentPageUrl);
     }
@@ -131,6 +137,11 @@ public class OrderService(
     {
         var order = await repository.GetForUserAsync(id, userId, cancellationToken)
             ?? throw new NotFoundException($"Order '{id}' was not found.");
+
+        if (order.Status == OrderStatus.PendingPayment)
+        {
+            return await CancelUnpaidAsync(userId, id, cancellationToken);
+        }
 
         if (order.Status != OrderStatus.Paid)
         {
@@ -179,34 +190,57 @@ public class OrderService(
         return await GetByIdAsync(userId, id, cancellationToken);
     }
 
+    /// <summary>
+    /// The customer gives up an order that is still waiting for payment. Nothing was paid, so the
+    /// provider is not called: the order is closed and its stock is free again right away.
+    /// If the customer pays on the still open payment page after all, that payment is refunded.
+    /// </summary>
+    private async Task<OrderResponse> CancelUnpaidAsync(Guid userId, Guid id, CancellationToken cancellationToken)
+    {
+        // False means a payment or a failure arrived in the same moment and changed the order first.
+        if (!await repository.TryCancelUnpaidAsync(id, CancelledByCustomerMessage, cancellationToken))
+        {
+            throw new ConflictException("The order has just changed. Check its status and try again.");
+        }
+
+        return await GetByIdAsync(userId, id, cancellationToken);
+    }
+
     private static ConflictException Unavailable(string productName) =>
         new($"'{productName}' has changed or is no longer available in the requested quantity. Review your cart.");
 
-    private OrderResponse ToResponse(Order order, string? paymentPageUrl = null) => new(
-        order.Id,
-        order.Status.ToString(),
-        order.TotalAmount,
-        paymentPageUrl,
-        order.RecipientFirstName,
-        order.RecipientLastName,
-        order.PhoneNumber,
-        order.City,
-        order.District,
-        order.AddressLine,
-        order.PostalCode,
-        order.PaymentError,
-        order.PaidAt,
-        order.CreatedAt,
-        order.CanBeCancelled(timeProvider.GetUtcNow().UtcDateTime),
-        // Order items have no position of their own, so the name gives a stable order.
-        order.Items
-            .OrderBy(item => item.ProductName, StringComparer.Ordinal)
-            .ThenBy(item => item.ProductId)
-            .Select(item => new OrderItemResponse(
-                item.ProductId,
-                item.ProductName,
-                item.UnitPrice,
-                item.Quantity,
-                item.UnitPrice * item.Quantity))
-            .ToList());
+    /// <param name="newPaymentPageUrl">The page that was just opened, for the response that creates the order.</param>
+    private OrderResponse ToResponse(Order order, string? newPaymentPageUrl = null)
+    {
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var usablePageLifetime = ReconciliationSettings.PaymentPageLifetime - PaymentPageMargin;
+
+        return new OrderResponse(
+            order.Id,
+            order.Status.ToString(),
+            order.TotalAmount,
+            newPaymentPageUrl ?? (order.CanBePaid(now, usablePageLifetime) ? order.PaymentPageUrl : null),
+            order.RecipientFirstName,
+            order.RecipientLastName,
+            order.PhoneNumber,
+            order.City,
+            order.District,
+            order.AddressLine,
+            order.PostalCode,
+            order.PaymentError,
+            order.PaidAt,
+            order.CreatedAt,
+            order.CanBeCancelled(now),
+            // Order items have no position of their own, so the name gives a stable order.
+            order.Items
+                .OrderBy(item => item.ProductName, StringComparer.Ordinal)
+                .ThenBy(item => item.ProductId)
+                .Select(item => new OrderItemResponse(
+                    item.ProductId,
+                    item.ProductName,
+                    item.UnitPrice,
+                    item.Quantity,
+                    item.UnitPrice * item.Quantity))
+                .ToList());
+    }
 }

@@ -16,7 +16,8 @@ public interface IOrderRepository
     /// </exception>
     Task<Guid?> CreateAndReserveStockAsync(Order order, CancellationToken cancellationToken);
 
-    Task SetPaymentTokenAsync(Guid orderId, string paymentToken, CancellationToken cancellationToken);
+    /// <summary>Stores the token and the address of the payment page that was opened for the order.</summary>
+    Task SetPaymentPageAsync(Guid orderId, string paymentToken, string paymentPageUrl, CancellationToken cancellationToken);
 
     /// <summary>Returns the order with its items, or null if no order has this payment token.</summary>
     Task<Order?> GetByPaymentTokenAsync(string paymentToken, CancellationToken cancellationToken);
@@ -31,19 +32,27 @@ public interface IOrderRepository
     /// <summary>
     /// Moves the order from PendingPayment to PaymentFailed and, in the same transaction, puts its
     /// items back in stock. Does nothing if the order is not waiting for payment.
+    /// If the payment page can still be paid, the order is also marked for a later payment recheck.
     /// </summary>
     /// <returns>True only for the one call that changed the order.</returns>
     Task<bool> TryMarkPaymentFailedAsync(Guid orderId, string error, CancellationToken cancellationToken);
 
     /// <summary>
     /// Moves the order from PendingPayment to Cancelled and, in the same transaction, puts its
-    /// items back in stock. Used when the payment was not completed in time.
+    /// items back in stock. Used when the payment was not completed in time or the customer gave up.
+    /// If the payment page can still be paid, the order is also marked for a later payment recheck.
     /// </summary>
     /// <returns>True only for the one call that changed the order.</returns>
     Task<bool> TryCancelUnpaidAsync(Guid orderId, string reason, CancellationToken cancellationToken);
 
     /// <summary>Returns orders that have been waiting for payment since before the given time, oldest first.</summary>
     Task<List<Order>> GetPendingPaymentCreatedBeforeAsync(DateTime createdBefore, int limit, CancellationToken cancellationToken);
+
+    /// <summary>Returns closed orders whose payment recheck was due before the given time, oldest first.</summary>
+    Task<List<Order>> GetPaymentRecheckDueAsync(DateTime dueBefore, int limit, CancellationToken cancellationToken);
+
+    /// <summary>Marks the payment recheck of a closed order as done.</summary>
+    Task ClearPaymentRecheckAsync(Guid orderId, CancellationToken cancellationToken);
 
     /// <summary>Returns orders that have been in Cancelling since before the given time, oldest first.</summary>
     Task<List<Order>> GetCancellingUpdatedBeforeAsync(DateTime updatedBefore, int limit, CancellationToken cancellationToken);

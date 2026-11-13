@@ -3,9 +3,11 @@ namespace FurnitureEcommerce.Application.Orders;
 public record CreateOrderRequest(Guid AddressId);
 
 /// <param name="PaymentPageUrl">
-/// Where to send the customer to pay. Only present in the response that creates the order.
+/// Where to send the customer to pay. Present while the order waits for payment and its payment page is still open.
 /// </param>
-/// <param name="CanCancel">True while the customer can still cancel: paid today and not shipped.</param>
+/// <param name="CanCancel">
+/// True while the customer can still cancel: waiting for payment, or paid today and not shipped.
+/// </param>
 public record OrderResponse(
     Guid Id,
     string Status,

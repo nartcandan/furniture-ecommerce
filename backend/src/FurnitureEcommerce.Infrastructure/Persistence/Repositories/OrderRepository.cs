@@ -7,7 +7,7 @@ using Npgsql;
 
 namespace FurnitureEcommerce.Infrastructure.Persistence.Repositories;
 
-public class OrderRepository(AppDbContext dbContext) : IOrderRepository
+public class OrderRepository(AppDbContext dbContext, ReconciliationSettings reconciliationSettings) : IOrderRepository
 {
     // Matches the column size in OrderConfiguration.
     private const int MaxPaymentErrorLength = 500;
@@ -62,7 +62,11 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
         return null;
     }
 
-    public Task SetPaymentTokenAsync(Guid orderId, string paymentToken, CancellationToken cancellationToken)
+    public Task SetPaymentPageAsync(
+        Guid orderId,
+        string paymentToken,
+        string paymentPageUrl,
+        CancellationToken cancellationToken)
     {
         var updatedAt = DateTime.UtcNow;
 
@@ -71,6 +75,7 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(order => order.PaymentToken, paymentToken)
+                    .SetProperty(order => order.PaymentPageUrl, paymentPageUrl)
                     .SetProperty(order => order.UpdatedAt, updatedAt),
                 cancellationToken);
     }
@@ -204,8 +209,48 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
 
         await RestockAsync(orderId, now, cancellationToken);
 
+        // The stock is free again, but a payment page that was opened for this order may still be open.
+        // A payment made there normally comes back through the callback and is refunded. If that callback
+        // is lost, nobody would notice the payment, so the provider is asked once more after the page
+        // has expired. An order without a page, or one closed after that time, needs no recheck.
+        var pageOpenedAt = await dbContext.Orders
+            .Where(order => order.Id == orderId && order.PaymentToken != null)
+            .Select(order => (DateTime?)order.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (pageOpenedAt + reconciliationSettings.PendingPaymentTimeout is { } recheckAt && recheckAt > now)
+        {
+            await dbContext.Orders
+                .Where(order => order.Id == orderId)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(order => order.PaymentRecheckAt, recheckAt),
+                    cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
         return true;
+    }
+
+    public Task<List<Order>> GetPaymentRecheckDueAsync(
+        DateTime dueBefore,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.Orders
+            .AsNoTracking()
+            .Where(order => order.PaymentRecheckAt < dueBefore)
+            .OrderBy(order => order.PaymentRecheckAt)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task ClearPaymentRecheckAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        return dbContext.Orders
+            .Where(order => order.Id == orderId)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(order => order.PaymentRecheckAt, (DateTime?)null),
+                cancellationToken);
     }
 
     public async Task<bool> TryBeginCancellationAsync(Guid orderId, Guid userId, CancellationToken cancellationToken)

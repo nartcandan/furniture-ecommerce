@@ -24,6 +24,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(order => order.AddressLine).HasMaxLength(500);
         builder.Property(order => order.PostalCode).HasMaxLength(10);
         builder.Property(order => order.PaymentToken).HasMaxLength(200);
+        builder.Property(order => order.PaymentPageUrl).HasMaxLength(500);
         builder.Property(order => order.PaymentId).HasMaxLength(100);
         builder.Property(order => order.PaymentError).HasMaxLength(500);
 
@@ -35,6 +36,11 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         // The payment callback finds the order by this token.
         builder.HasIndex(order => order.PaymentToken).IsUnique();
+
+        // The reconciliation job looks for closed orders whose payment page has to be checked once more.
+        // Almost every order has no such date, so the index only holds the few that do.
+        builder.HasIndex(order => order.PaymentRecheckAt)
+            .HasFilter("\"PaymentRecheckAt\" IS NOT NULL");
 
         // For the order history, newest first.
         builder.HasIndex(order => new { order.UserId, order.CreatedAt });

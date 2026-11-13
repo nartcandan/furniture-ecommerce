@@ -192,7 +192,8 @@ public class OrderServiceTests
                 && request.CallbackUrl == "http://api/callback"
                 && request.Buyer == new PaymentBuyer(UserId, "Ayse", "Yilmaz", "ayse@example.com", "10.0.0.1")),
             Arg.Any<CancellationToken>());
-        await repository.Received(1).SetPaymentTokenAsync(order.Id, "token-1", Arg.Any<CancellationToken>());
+        await repository.Received(1).SetPaymentPageAsync(
+            order.Id, "token-1", "https://pay/token-1", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -206,7 +207,7 @@ public class OrderServiceTests
 
         await repository.Received(1).TryMarkPaymentFailedAsync(
             Arg.Any<Guid>(), "Provider is down", Arg.Any<CancellationToken>());
-        await repository.DidNotReceiveWithAnyArgs().SetPaymentTokenAsync(default, default!, default);
+        await repository.DidNotReceiveWithAnyArgs().SetPaymentPageAsync(default, default!, default!, default);
     }
 
     [Fact]
@@ -228,6 +229,85 @@ public class OrderServiceTests
             service.CreateAsync(UserId, new CreateOrderRequest(Guid.Empty), null, CancellationToken.None));
 
         await AssertNothingSavedAsync();
+    }
+
+    private Order StoredOrder(OrderStatus status, int minutesOld = 1) => new()
+    {
+        UserId = UserId,
+        Status = status,
+        TotalAmount = 1000,
+        CreatedAt = clock.UtcNow.UtcDateTime.AddMinutes(-minutesOld),
+        PaymentToken = "token-1",
+        PaymentPageUrl = "https://pay/token-1",
+        RecipientFirstName = "Ayse",
+        RecipientLastName = "Yilmaz",
+        PhoneNumber = "+905551112233",
+        City = "Istanbul",
+        District = "Kadikoy",
+        AddressLine = "Moda Cd. No: 1"
+    };
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(27, true)]
+    // The page lives for 30 minutes. The link is withdrawn two minutes earlier.
+    [InlineData(28, false)]
+    [InlineData(40, false)]
+    public async Task GetByIdAsync_OffersThePaymentPage_OnlyWhileItCanStillBePaid(int minutesOld, bool isOffered)
+    {
+        var order = StoredOrder(OrderStatus.PendingPayment, minutesOld);
+        repository.GetForUserAsync(order.Id, UserId, Arg.Any<CancellationToken>()).Returns(order);
+
+        var response = await service.GetByIdAsync(UserId, order.Id, CancellationToken.None);
+
+        Assert.Equal(isOffered ? "https://pay/token-1" : null, response.PaymentPageUrl);
+        Assert.True(response.CanCancel);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Paid)]
+    [InlineData(OrderStatus.PaymentFailed)]
+    [InlineData(OrderStatus.Cancelled)]
+    public async Task GetByIdAsync_DoesNotOfferThePaymentPage_WhenOrderNoLongerWaits(OrderStatus status)
+    {
+        var order = StoredOrder(status);
+        repository.GetForUserAsync(order.Id, UserId, Arg.Any<CancellationToken>()).Returns(order);
+
+        var response = await service.GetByIdAsync(UserId, order.Id, CancellationToken.None);
+
+        Assert.Null(response.PaymentPageUrl);
+    }
+
+    [Fact]
+    public async Task CancelAsync_ClosesUnpaidOrder_WithoutCallingTheProvider()
+    {
+        var waiting = StoredOrder(OrderStatus.PendingPayment);
+        var closed = StoredOrder(OrderStatus.Cancelled);
+        repository.GetForUserAsync(waiting.Id, UserId, Arg.Any<CancellationToken>()).Returns(waiting, closed);
+        repository.TryCancelUnpaidAsync(waiting.Id, Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(true);
+
+        var response = await service.CancelAsync(UserId, waiting.Id, CancellationToken.None);
+
+        Assert.Equal("Cancelled", response.Status);
+        await repository.Received(1).TryCancelUnpaidAsync(
+            waiting.Id, OrderService.CancelledByCustomerMessage, Arg.Any<CancellationToken>());
+        // Nothing was paid, so no refund is asked for, and the paid-order path is not taken.
+        await gateway.DidNotReceiveWithAnyArgs().CancelPaymentAsync(default!, default);
+        await repository.DidNotReceiveWithAnyArgs().TryBeginCancellationAsync(default, default, default);
+    }
+
+    [Fact]
+    public async Task CancelAsync_ThrowsConflict_WhenUnpaidOrderChangedInTheSameMoment()
+    {
+        // For example the payment arrived between reading the order and closing it.
+        var waiting = StoredOrder(OrderStatus.PendingPayment);
+        repository.GetForUserAsync(waiting.Id, UserId, Arg.Any<CancellationToken>()).Returns(waiting);
+        repository.TryCancelUnpaidAsync(waiting.Id, Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(false);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CancelAsync(UserId, waiting.Id, CancellationToken.None));
+
+        await gateway.DidNotReceiveWithAnyArgs().CancelPaymentAsync(default!, default);
     }
 
     [Fact]

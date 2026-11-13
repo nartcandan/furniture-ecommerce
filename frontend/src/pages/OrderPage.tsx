@@ -1,23 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { CircleAlert, CircleCheck, Clock, PackageCheck, Truck, type LucideIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { ApiError } from '@/api/client'
-import { cancelOrder, getOrder, type Order, type OrderStatus } from '@/api/orders'
-import { FormError } from '@/components/FormError'
+import { getOrder, type Order, type OrderStatus } from '@/api/orders'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AddressText } from '@/features/addresses/AddressText'
+import { CancelOrderDialog } from '@/features/orders/CancelOrderDialog'
 import { OrderStatusBadge } from '@/features/orders/orderStatus'
+import { UnpaidOrderActions } from '@/features/orders/UnpaidOrderActions'
 import { formatDateTime, formatPrice, orderNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -48,7 +41,7 @@ function Banner({
   return (
     <div role="status" className={cn('flex gap-3.5 rounded-2xl border p-5', toneClasses[tone])}>
       <Icon aria-hidden className="mt-0.5 size-6 shrink-0" />
-      <div>
+      <div className="min-w-0 flex-1">
         <h2 className="font-sans text-base font-semibold tracking-normal">{title}</h2>
         <div className="mt-1 text-sm text-foreground/80">{children}</div>
       </div>
@@ -56,15 +49,31 @@ function Banner({
   )
 }
 
+/** A note about a payment that arrived after the order had been closed. It comes from the address of the page. */
+function latePaymentNote(latePayment: string | null): string | null {
+  if (latePayment === 'refunded') {
+    return 'A payment arrived after this order was closed. It was refunded in full.'
+  }
+  if (latePayment === 'refund-failed') {
+    return 'A payment arrived after this order was closed and could not be refunded automatically. Please contact us.'
+  }
+  return null
+}
+
 /** What happened to the order, said from its real status. The address only adds a note about a late payment. */
 function StatusBanner({ order, latePayment }: { order: Order; latePayment: string | null }) {
+  const lateNote = latePaymentNote(latePayment)
+
   switch (order.status) {
     case 'PendingPayment':
       return (
         <Banner tone="waiting" icon={Clock} title="Waiting for your payment">
-          We have not received the payment yet. This page updates by itself. If you closed the
-          payment page, the order is closed about 35 minutes after it was placed, and you can then
-          order again.
+          <p>
+            {order.paymentPageUrl
+              ? 'Your order is confirmed once the payment is made. The payment page stays open for about half an hour after the order was placed.'
+              : 'The payment page has expired. If a payment was made, this page shows it shortly. Otherwise the order is closed within a few minutes and you can order again.'}
+          </p>
+          <UnpaidOrderActions order={order} className="mt-4" />
         </Banner>
       )
     case 'Paid':
@@ -94,12 +103,7 @@ function StatusBanner({ order, latePayment }: { order: Order; latePayment: strin
     case 'PaymentFailed':
       return (
         <Banner tone="bad" icon={CircleAlert} title="The payment did not go through">
-          {latePayment === 'refunded'
-            ? 'A payment arrived after this order was closed. It was refunded in full. '
-            : latePayment === 'refund-failed'
-              ? 'A payment arrived after this order was closed and could not be refunded automatically. Please contact us. '
-              : 'This order was not charged. '}
-          Your items are still in{' '}
+          {lateNote ?? 'This order was not charged.'} Your items are still in{' '}
           <Link to="/cart" className="font-medium underline underline-offset-4">
             your cart
           </Link>
@@ -109,31 +113,18 @@ function StatusBanner({ order, latePayment }: { order: Order; latePayment: strin
     case 'Cancelled':
       return (
         <Banner tone="neutral" icon={CircleAlert} title="This order was cancelled">
-          {latePayment === 'refunded'
-            ? 'A payment arrived after the order was closed. It was refunded in full.'
-            : latePayment === 'refund-failed'
-              ? 'A payment arrived after the order was closed and could not be refunded automatically. Please contact us.'
-              : order.paidAt
-                ? 'Your payment was refunded in full.'
-                : 'It was not paid in time, and nothing was charged.'}
+          {lateNote ??
+            (order.paidAt
+              ? 'Your payment was refunded in full.'
+              : 'It was not paid, and nothing was charged.')}
         </Banner>
       )
   }
 }
 
-function CancelOrder({ order }: { order: Order }) {
-  const queryClient = useQueryClient()
+/** Offered for a paid order on the day of payment. An unpaid order has its own actions in the banner. */
+function CancelPaidOrder({ order }: { order: Order }) {
   const [isConfirming, setIsConfirming] = useState(false)
-  const cancel = useMutation({
-    mutationFn: () => cancelOrder(order.id),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(['order', order.id], updated)
-      void queryClient.invalidateQueries({ queryKey: ['orders'] })
-      setIsConfirming(false)
-    },
-    // The order may have changed in the meantime, for example it was shipped.
-    onError: () => queryClient.invalidateQueries({ queryKey: ['order', order.id] }),
-  })
 
   return (
     <div className="mt-8 rounded-2xl border bg-card p-5">
@@ -144,39 +135,7 @@ function CancelOrder({ order }: { order: Order }) {
       <Button variant="outline" size="lg" className="mt-4 h-10" onClick={() => setIsConfirming(true)}>
         Cancel order
       </Button>
-
-      <Dialog open={isConfirming} onOpenChange={(open) => !cancel.isPending && setIsConfirming(open)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel this order?</DialogTitle>
-            <DialogDescription>
-              The whole order is cancelled and {formatPrice(order.totalAmount)} is refunded to your
-              card. This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <FormError message={cancel.error?.message} />
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              size="lg"
-              className="h-10"
-              disabled={cancel.isPending}
-              onClick={() => setIsConfirming(false)}
-            >
-              Keep order
-            </Button>
-            <Button
-              variant="destructive"
-              size="lg"
-              className="h-10"
-              disabled={cancel.isPending}
-              onClick={() => cancel.mutate()}
-            >
-              {cancel.isPending ? 'Cancelling…' : 'Cancel order'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CancelOrderDialog order={order} open={isConfirming} onOpenChange={setIsConfirming} />
     </div>
   )
 }
@@ -262,7 +221,7 @@ export function OrderPage() {
             </div>
           </dl>
 
-          {data.canCancel && <CancelOrder order={data} />}
+          {data.status === 'Paid' && data.canCancel && <CancelPaidOrder order={data} />}
         </section>
 
         <aside className="grid h-fit gap-6 rounded-2xl bg-secondary p-6">

@@ -209,6 +209,13 @@ namespace FurnitureEcommerce.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("PaymentPageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("PaymentRecheckAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PaymentToken")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -248,6 +255,9 @@ namespace FurnitureEcommerce.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PaymentRecheckAt")
+                        .HasFilter("\"PaymentRecheckAt\" IS NOT NULL");
 
                     b.HasIndex("PaymentToken")
                         .IsUnique();

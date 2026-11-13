@@ -91,14 +91,15 @@ public class PaymentsTests(ApiFactory factory) : ApiTestBase(factory)
     }
 
     [Fact]
-    public async Task CreateOrder_ReturnsPaymentPageUrl()
+    public async Task CreateOrder_ReturnsPaymentPageUrl_AndKeepsItForLater()
     {
         var (customer, _, order) = await PlaceOrderAsync();
 
         var stored = await GetOrderAsync(customer, order.Id);
 
         Assert.Equal($"https://pay.example.test/?token={Payments.TokenFor(order.Id)}", order.PaymentPageUrl);
-        Assert.Null(stored.PaymentPageUrl);
+        // A customer who left the payment page can find it again on the order.
+        Assert.Equal(order.PaymentPageUrl, stored.PaymentPageUrl);
     }
 
     [Fact]

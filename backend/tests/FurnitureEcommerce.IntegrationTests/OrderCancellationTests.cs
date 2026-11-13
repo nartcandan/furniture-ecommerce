@@ -100,19 +100,9 @@ public class OrderCancellationTests(ApiFactory factory) : ApiTestBase(factory)
         Assert.Equal(10, await GetStockAsync(product.Id));
     }
 
-    [Fact]
-    public async Task Cancel_ReturnsConflict_ForOrderWaitingForPayment()
-    {
-        var (customer, product, order) = await PlaceOrderAsync(pay: false);
-
-        var response = await CancelAsync(customer, order.Id);
-
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Empty(Payments.CancelledPaymentIds);
-        Assert.Equal(8, await GetStockAsync(product.Id));
-    }
-
+    // An order that is still waiting for payment can be cancelled too. UnpaidOrderTests covers that.
     [Theory]
+    [InlineData(OrderStatus.PaymentFailed)]
     [InlineData(OrderStatus.Shipped)]
     [InlineData(OrderStatus.Delivered)]
     [InlineData(OrderStatus.Cancelled)]

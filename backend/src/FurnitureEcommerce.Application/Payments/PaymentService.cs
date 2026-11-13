@@ -117,6 +117,16 @@ public class PaymentService(
                 return PaymentOutcome.Refunded;
             }
 
+            if (cancellation.WasAlreadyCancelled)
+            {
+                // A late payment can be seen twice: by a repeated callback, or by the callback and the
+                // reconciliation job. The first one refunded it, so this is not a failure.
+                logger.LogWarning(
+                    "Payment {PaymentId} of order {OrderId} was already refunded ({Error}).",
+                    paymentId, orderId, cancellation.Error);
+                return PaymentOutcome.Refunded;
+            }
+
             logger.LogCritical(
                 "Payment {PaymentId} of order {OrderId} must be refunded by hand. The provider answered: {Error}",
                 paymentId, orderId, cancellation.Error);

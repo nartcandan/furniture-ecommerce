@@ -21,9 +21,16 @@ public class Order
 
     // Payment details live here because an order has exactly one payment.
     public string? PaymentToken { get; set; }
+
+    // The provider's payment page for this order. The customer can go back to it while it is still open.
+    public string? PaymentPageUrl { get; set; }
     public string? PaymentId { get; set; }
     public string? PaymentError { get; set; }
     public DateTime? PaidAt { get; set; }
+
+    // Set when the order is closed while its payment page can still be paid. At this time the provider
+    // is asked once more, so that a payment made on that page after all is found and refunded.
+    public DateTime? PaymentRecheckAt { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
@@ -37,8 +44,18 @@ public class Order
     public bool IsPaidOn(DateTime utcNow) =>
         PaidAt is { } paidAt && ToStoreDate(paidAt) == ToStoreDate(utcNow);
 
-    /// <summary>A customer can cancel an order that is paid, not yet shipped, and paid today.</summary>
-    public bool CanBeCancelled(DateTime utcNow) => Status == OrderStatus.Paid && IsPaidOn(utcNow);
+    /// <summary>
+    /// A customer can cancel an order that is still waiting for payment, and an order that is paid,
+    /// not yet shipped, and paid today.
+    /// </summary>
+    public bool CanBeCancelled(DateTime utcNow) =>
+        Status == OrderStatus.PendingPayment || (Status == OrderStatus.Paid && IsPaidOn(utcNow));
+
+    /// <summary>True while the order waits for payment and its payment page has not expired.</summary>
+    public bool CanBePaid(DateTime utcNow, TimeSpan paymentPageLifetime) =>
+        Status == OrderStatus.PendingPayment
+        && PaymentPageUrl is not null
+        && utcNow < CreatedAt + paymentPageLifetime;
 
     private static DateOnly ToStoreDate(DateTime utc) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), StoreTimeZone));
