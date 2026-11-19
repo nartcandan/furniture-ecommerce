@@ -10,6 +10,8 @@ import { queryClient } from '@/lib/queryClient'
 import { AccountPage } from '@/pages/AccountPage'
 import { AdminCategoriesPage } from '@/pages/admin/AdminCategoriesPage'
 import { AdminNewProductPage } from '@/pages/admin/AdminNewProductPage'
+import { AdminOrderPage } from '@/pages/admin/AdminOrderPage'
+import { AdminOrdersPage } from '@/pages/admin/AdminOrdersPage'
 import { AdminProductPage } from '@/pages/admin/AdminProductPage'
 import { AdminProductsPage } from '@/pages/admin/AdminProductsPage'
 import { CartPage } from '@/pages/CartPage'
@@ -58,7 +60,9 @@ const router = createBrowserRouter([
         path: '/admin',
         element: <AdminLayout />,
         children: [
-          { index: true, element: <Navigate to="/admin/products" replace /> },
+          { index: true, element: <Navigate to="/admin/orders" replace /> },
+          { path: 'orders', element: <AdminOrdersPage /> },
+          { path: 'orders/:id', element: <AdminOrderPage /> },
           { path: 'categories', element: <AdminCategoriesPage /> },
           { path: 'products', element: <AdminProductsPage /> },
           { path: 'products/new', element: <AdminNewProductPage /> },

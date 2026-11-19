@@ -1,12 +1,12 @@
-import { ArrowUpRight, FolderTree, LogOut, Package } from 'lucide-react'
+import { ArrowUpRight, FolderTree, LogOut, Package, ReceiptText } from 'lucide-react'
 import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { useAuthStore, useSession } from '@/features/auth/authStore'
 import { cn } from '@/lib/utils'
 
-// Orders join this list in their own step.
 const sections = [
+  { to: '/admin/orders', label: 'Orders', icon: ReceiptText },
   { to: '/admin/products', label: 'Products', icon: Package },
   { to: '/admin/categories', label: 'Categories', icon: FolderTree },
 ]
