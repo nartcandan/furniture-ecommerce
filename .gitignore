@@ -21,6 +21,7 @@ appsettings.*.local.json
 # Uploaded product images
 backend/src/FurnitureEcommerce.Api/wwwroot/uploads/
 backend/src/FurnitureEcommerce.Api/e2e-uploads/
+backend/src/FurnitureEcommerce.Api/logs/
 
 # IDE and OS
 .vs/

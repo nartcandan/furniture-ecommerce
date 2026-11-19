@@ -1,3 +1,4 @@
+using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Common.Exceptions;
 using FurnitureEcommerce.Application.Payments;
 using FurnitureEcommerce.Domain.Entities;
@@ -185,6 +186,7 @@ public class OrderReconciliationService(
             // Read as "the first request did go through". Logged every time, because that reading
             // comes from observing the provider, not from its documentation.
             logger.LogWarning(
+                LogEvents.PaymentAlreadyCancelled,
                 "Order {OrderId}: the provider says payment {PaymentId} was cancelled before ({Error}). Treating it as refunded.",
                 order.Id, order.PaymentId, cancellation.Error);
         }

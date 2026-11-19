@@ -1,3 +1,4 @@
+using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Common.Exceptions;
 using FurnitureEcommerce.Application.Orders;
 using FurnitureEcommerce.Domain.Entities;
@@ -122,18 +123,21 @@ public class PaymentService(
                 // A late payment can be seen twice: by a repeated callback, or by the callback and the
                 // reconciliation job. The first one refunded it, so this is not a failure.
                 logger.LogWarning(
+                    LogEvents.PaymentAlreadyCancelled,
                     "Payment {PaymentId} of order {OrderId} was already refunded ({Error}).",
                     paymentId, orderId, cancellation.Error);
                 return PaymentOutcome.Refunded;
             }
 
             logger.LogCritical(
+                LogEvents.ManualRefundRequired,
                 "Payment {PaymentId} of order {OrderId} must be refunded by hand. The provider answered: {Error}",
                 paymentId, orderId, cancellation.Error);
         }
         catch (PaymentGatewayException exception)
         {
             logger.LogCritical(
+                LogEvents.ManualRefundRequired,
                 exception,
                 "Payment {PaymentId} of order {OrderId} must be refunded by hand.",
                 paymentId, orderId);

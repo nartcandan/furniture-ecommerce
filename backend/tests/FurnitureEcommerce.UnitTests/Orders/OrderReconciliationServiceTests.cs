@@ -1,10 +1,13 @@
 using FurnitureEcommerce.Application.Common.Exceptions;
+using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Orders;
 using FurnitureEcommerce.Application.Payments;
 using FurnitureEcommerce.Domain.Entities;
+using FurnitureEcommerce.UnitTests.Common;
 using Microsoft.Extensions.Logging.Abstractions;
-using NSubstitute;
+using Microsoft.Extensions.Logging;
 using NSubstitute.ExceptionExtensions;
+using NSubstitute;
 
 namespace FurnitureEcommerce.UnitTests.Orders;
 
@@ -15,6 +18,7 @@ public class OrderReconciliationServiceTests
     private readonly IOrderRepository repository = Substitute.For<IOrderRepository>();
     private readonly IPaymentService paymentService = Substitute.For<IPaymentService>();
     private readonly IPaymentGateway gateway = Substitute.For<IPaymentGateway>();
+    private readonly RecordingLogger<OrderReconciliationService> logger = new();
     private readonly OrderReconciliationService service;
 
     public OrderReconciliationServiceTests()
@@ -25,7 +29,7 @@ public class OrderReconciliationServiceTests
             gateway,
             new ReconciliationSettings(TimeSpan.FromMinutes(35), TimeSpan.FromMinutes(2)),
             new FixedClock { UtcNow = Now },
-            NullLogger<OrderReconciliationService>.Instance);
+            logger);
 
         Unpaid();
         Cancelling();
@@ -240,6 +244,8 @@ public class OrderReconciliationServiceTests
         Assert.Equal(1, summary.Cancelled);
         await repository.Received(1).TryCompleteCancellationAsync(order.Id, Arg.Any<CancellationToken>());
         await repository.DidNotReceiveWithAnyArgs().TryRevertCancellationAsync(default, default);
+        var warning = Assert.Single(logger.Of(LogEvents.PaymentAlreadyCancelled));
+        Assert.Equal(LogLevel.Warning, warning.Level);
     }
 
     [Fact]

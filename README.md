@@ -186,6 +186,22 @@ A payment can end without the API hearing about it: the customer closes the paym
 
 The intervals are in the `Reconciliation` section of `appsettings.json`.
 
+## Logs
+
+The API logs with [Serilog](https://serilog.net), one line per request with its status and duration.
+
+- **Development:** readable lines in the console, and daily files in `backend/src/FurnitureEcommerce.Api/logs`: `api-*.log` with everything, `alerts-*.log` with warnings and errors only.
+- **Any other environment (a deployed API):** one JSON object per line on the console, which hosting platforms collect and can search.
+
+Two events need a person and have fixed names to search for:
+
+| Event | Level | Meaning |
+|---|---|---|
+| `ManualRefundRequired` | Critical | Money arrived for a closed order and could not be given back. Refund it in the iyzico panel. |
+| `PaymentAlreadyCancelled` | Warning | iyzico said a payment was cancelled before (error `8514`) and it was treated as refunded. Worth checking in the iyzico panel. |
+
+Log levels are in the `Serilog` section of `appsettings.json`.
+
 ## Running the tests
 
 From the `backend` folder:

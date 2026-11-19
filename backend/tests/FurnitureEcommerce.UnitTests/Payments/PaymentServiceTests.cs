@@ -1,10 +1,13 @@
 using FurnitureEcommerce.Application.Common.Exceptions;
+using FurnitureEcommerce.Application.Common;
 using FurnitureEcommerce.Application.Orders;
 using FurnitureEcommerce.Application.Payments;
 using FurnitureEcommerce.Domain.Entities;
+using FurnitureEcommerce.UnitTests.Common;
 using Microsoft.Extensions.Logging.Abstractions;
-using NSubstitute;
+using Microsoft.Extensions.Logging;
 using NSubstitute.ExceptionExtensions;
+using NSubstitute;
 
 namespace FurnitureEcommerce.UnitTests.Payments;
 
@@ -15,12 +18,13 @@ public class PaymentServiceTests
 
     private readonly IOrderRepository repository = Substitute.For<IOrderRepository>();
     private readonly IPaymentGateway gateway = Substitute.For<IPaymentGateway>();
+    private readonly RecordingLogger<PaymentService> logger = new();
     private readonly PaymentService service;
     private readonly Order order = NewOrder(OrderStatus.PendingPayment);
 
     public PaymentServiceTests()
     {
-        service = new PaymentService(repository, gateway, NullLogger<PaymentService>.Instance);
+        service = new PaymentService(repository, gateway, logger);
 
         repository.GetByPaymentTokenAsync(Token, Arg.Any<CancellationToken>()).Returns(order);
         gateway.CancelPaymentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -160,6 +164,10 @@ public class PaymentServiceTests
         var result = await HandleAsync();
 
         Assert.Equal(PaymentOutcome.Refunded, result.Outcome);
+        // Read as refunded from what the sandbox showed, so it is logged to be checked.
+        var warning = Assert.Single(logger.Of(LogEvents.PaymentAlreadyCancelled));
+        Assert.Equal(LogLevel.Warning, warning.Level);
+        Assert.Empty(logger.Of(LogEvents.ManualRefundRequired));
     }
 
     [Fact]
@@ -174,6 +182,28 @@ public class PaymentServiceTests
         var result = await HandleAsync();
 
         Assert.Equal(PaymentOutcome.RefundFailed, result.Outcome);
+        // Nobody else will give this money back, so it is logged at the highest level under a fixed name.
+        var alert = Assert.Single(logger.Of(LogEvents.ManualRefundRequired));
+        Assert.Equal(LogLevel.Critical, alert.Level);
+        Assert.Contains(PaymentId, alert.Message);
+        Assert.Contains(closed.Id.ToString(), alert.Message);
+    }
+
+    [Fact]
+    public async Task LogsManualRefund_WhenTheProviderCannotBeReachedToRefundALatePayment()
+    {
+        var closed = NewOrder(OrderStatus.Cancelled);
+        repository.GetByPaymentTokenAsync(Token, Arg.Any<CancellationToken>()).Returns(closed);
+        GatewayReports(CheckoutResult.Paid(PaymentId, 1250.50m, closed.Id.ToString()));
+        gateway.CancelPaymentAsync(PaymentId, Arg.Any<CancellationToken>())
+            .ThrowsAsync(new PaymentGatewayException("unreachable"));
+
+        var result = await HandleAsync();
+
+        Assert.Equal(PaymentOutcome.RefundFailed, result.Outcome);
+        var alert = Assert.Single(logger.Of(LogEvents.ManualRefundRequired));
+        Assert.Equal(LogLevel.Critical, alert.Level);
+        Assert.IsType<PaymentGatewayException>(alert.Exception);
     }
 
     [Fact]
