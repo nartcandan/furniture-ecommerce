@@ -1,11 +1,13 @@
 import { Link } from 'react-router'
 import { Logo } from '@/components/Logo'
+import { useSession } from '@/features/auth/authStore'
 import { categoryPath, useCategories } from '@/features/catalog/useCategories'
 
 const linkClass = 'text-muted-foreground transition-colors hover:text-foreground'
 
 export function SiteFooter() {
   const categories = useCategories()
+  const signedIn = useSession() !== null
 
   return (
     <footer className="mt-16 border-t bg-muted/60">
@@ -48,16 +50,21 @@ export function SiteFooter() {
                 My orders
               </Link>
             </li>
-            <li>
-              <Link to="/login" className={linkClass}>
-                Sign in
-              </Link>
-            </li>
-            <li>
-              <Link to="/register" className={linkClass}>
-                Create an account
-              </Link>
-            </li>
+            {/* Only a guest is offered to sign in or register. */}
+            {!signedIn && (
+              <>
+                <li>
+                  <Link to="/login" className={linkClass}>
+                    Sign in
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/register" className={linkClass}>
+                    Create an account
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </nav>
       </div>

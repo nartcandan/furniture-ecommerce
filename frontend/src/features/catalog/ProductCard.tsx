@@ -4,6 +4,7 @@ import type { Product } from '@/api/products'
 import { Badge } from '@/components/ui/badge'
 import { formatPrice } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { FadeInImage } from '@/components/FadeInImage'
 
 /** Shown where a product has no photo yet. */
 export function ImagePlaceholder({ className }: { className?: string }) {
@@ -25,14 +26,12 @@ export function ProductCard({ product }: { product: Product }) {
     >
       <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-secondary">
         {image ? (
-          <img
+          <FadeInImage
             src={image.url}
             alt={image.altText ?? ''}
             loading="lazy"
-            className={cn(
-              'size-full object-cover transition-transform duration-500 group-hover:scale-105',
-              isOutOfStock && 'opacity-60',
-            )}
+            loadedClassName={isOutOfStock ? 'opacity-60' : 'opacity-100'}
+            className="size-full object-cover transition-[opacity,transform] duration-500 group-hover:scale-105"
           />
         ) : (
           <ImagePlaceholder className="size-full" />

@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import type { Address } from '@/api/addresses'
 import { FormError } from '@/components/FormError'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,6 +13,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
+import { EmptyState } from '@/components/EmptyState'
 import { useSession } from '@/features/auth/authStore'
 import { AddressForm } from './AddressForm'
 import { AddressText } from './AddressText'
@@ -101,20 +102,16 @@ export function AddressBook() {
       )}
 
       {addresses.isError && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTitle>Your addresses could not be loaded</AlertTitle>
-          <AlertDescription>{addresses.error.message}</AlertDescription>
-        </Alert>
+        <QueryError title="Your addresses could not be loaded" query={addresses} className="mt-4" />
       )}
 
       {addresses.data?.length === 0 && (
-        <div className="mt-4 flex flex-col items-center rounded-2xl border border-dashed px-6 py-10 text-center">
-          <MapPin aria-hidden className="size-8 text-muted-foreground/60" strokeWidth={1.5} />
-          <p className="mt-3 font-medium">No saved addresses</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Add one now, or when you place your first order.
-          </p>
-        </div>
+        <EmptyState
+          icon={MapPin}
+          title="No saved addresses"
+          description="Add one now, or when you place your first order."
+          className="mt-4"
+        />
       )}
 
       {addresses.data && addresses.data.length > 0 && (

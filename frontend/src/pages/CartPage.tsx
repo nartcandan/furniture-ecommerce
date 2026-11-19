@@ -4,13 +4,15 @@ import { Link } from 'react-router'
 import type { Cart, CartItem } from '@/api/cart'
 import { FormError } from '@/components/FormError'
 import { QuantityStepper } from '@/components/QuantityStepper'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
+import { EmptyState } from '@/components/EmptyState'
 import { useCart, useRemoveFromCart, useSetCartQuantity } from '@/features/cart/useCart'
 import { ImagePlaceholder } from '@/features/catalog/ProductCard'
 import { formatPrice } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { FadeInImage } from '@/components/FadeInImage'
 
 function Warning({ children }: { children: ReactNode }) {
   return (
@@ -39,7 +41,7 @@ function CartLine({ item }: { item: CartItem }) {
         aria-hidden
       >
         {item.imageUrl ? (
-          <img src={item.imageUrl} alt="" className="size-full object-cover" />
+          <FadeInImage src={item.imageUrl} alt="" className="size-full object-cover" />
         ) : (
           <ImagePlaceholder className="size-full" />
         )}
@@ -156,16 +158,17 @@ function Summary({ cart }: { cart: Cart }) {
 
 function EmptyCart() {
   return (
-    <div className="flex flex-col items-center py-16 text-center">
-      <span className="flex size-16 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-        <ShoppingBag aria-hidden className="size-7" strokeWidth={1.5} />
-      </span>
-      <h2 className="mt-5 text-2xl font-semibold">Your cart is empty</h2>
-      <p className="mt-2 text-muted-foreground">Find something you like and it will wait for you here.</p>
-      <Button asChild size="lg" className="mt-8 h-11 px-6 text-base">
-        <Link to="/products">Browse products</Link>
-      </Button>
-    </div>
+    <EmptyState
+      variant="page"
+      icon={ShoppingBag}
+      title="Your cart is empty"
+      description="Find something you like and it will wait for you here."
+      action={
+        <Button asChild size="lg" className="h-11 px-6 text-base">
+          <Link to="/products">Browse products</Link>
+        </Button>
+      }
+    />
   )
 }
 
@@ -184,10 +187,7 @@ export function CartPage() {
       )}
 
       {cart.isError && (
-        <Alert variant="destructive" className="mt-8">
-          <AlertTitle>Your cart could not be loaded</AlertTitle>
-          <AlertDescription>{cart.error.message}</AlertDescription>
-        </Alert>
+        <QueryError title="Your cart could not be loaded" query={cart} className="mt-8" />
       )}
 
       {cart.data && cart.data.items.length === 0 && <EmptyCart />}

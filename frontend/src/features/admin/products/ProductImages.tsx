@@ -5,6 +5,7 @@ import type { Product, ProductImage } from '@/api/products'
 import { FormError } from '@/components/FormError'
 import { errorMessage } from '@/lib/formErrors'
 import { Button } from '@/components/ui/button'
+import { FadeInImage } from '@/components/FadeInImage'
 import {
   Dialog,
   DialogContent,
@@ -189,7 +190,7 @@ export function ProductImages({ product }: { product: Product }) {
         <ol className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {images.map((image, index) => (
             <li key={image.id} className="group relative overflow-hidden rounded-lg border bg-muted">
-              <img
+              <FadeInImage
                 src={image.url}
                 alt={image.altText ?? `${product.name}, image ${index + 1}`}
                 className="aspect-square w-full object-cover"

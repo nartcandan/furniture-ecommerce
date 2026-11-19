@@ -4,14 +4,15 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ApiError } from '@/api/client'
 import { getProduct, type Product } from '@/api/products'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
 import { AddToCart } from '@/features/cart/AddToCart'
 import { ImagePlaceholder } from '@/features/catalog/ProductCard'
 import { categoryPath } from '@/features/catalog/useCategories'
 import { formatNumber, formatPrice } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { FadeInImage } from '@/components/FadeInImage'
 
 const LOW_STOCK = 5
 
@@ -43,7 +44,7 @@ function Gallery({ product }: { product: Product }) {
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
           {images.map((image, position) => (
-            <img
+            <FadeInImage
               key={image.id}
               src={image.url}
               alt={image.altText ?? `${product.name}, photo ${position + 1}`}
@@ -95,7 +96,7 @@ function Gallery({ product }: { product: Product }) {
                   position === index && 'opacity-100 ring-primary',
                 )}
               >
-                <img src={image.url} alt='' loading='lazy' className='size-full object-cover' />
+                <FadeInImage src={image.url} alt='' loading='lazy' className='size-full object-cover' />
               </button>
             </li>
           ))}
@@ -178,10 +179,7 @@ export function ProductDetailPage() {
       return <NotFoundPage />
     }
     return (
-      <Alert variant="destructive">
-        <AlertTitle>The product could not be loaded</AlertTitle>
-        <AlertDescription>{product.error.message}</AlertDescription>
-      </Alert>
+      <QueryError title="The product could not be loaded" query={product} />
     )
   }
 

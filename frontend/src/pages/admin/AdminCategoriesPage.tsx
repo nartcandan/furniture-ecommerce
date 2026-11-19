@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import type { Category } from '@/api/categories'
 import { FormError } from '@/components/FormError'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +14,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
+import { EmptyState } from '@/components/EmptyState'
 import {
   Table,
   TableBody,
@@ -115,20 +116,16 @@ export function AdminCategoriesPage() {
       )}
 
       {categories.isError && (
-        <Alert variant="destructive" className="mt-6">
-          <AlertTitle>The categories could not be loaded</AlertTitle>
-          <AlertDescription>{categories.error.message}</AlertDescription>
-        </Alert>
+        <QueryError title="The categories could not be loaded" query={categories} className="mt-6" />
       )}
 
       {categories.data?.length === 0 && (
-        <div className="mt-6 flex flex-col items-center rounded-xl border border-dashed px-6 py-10 text-center">
-          <FolderTree aria-hidden className="size-8 text-muted-foreground/60" strokeWidth={1.5} />
-          <p className="mt-3 font-medium">No categories yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Products need a category, so start here.
-          </p>
-        </div>
+        <EmptyState
+          icon={FolderTree}
+          title="No categories yet"
+          description="Products need a category, so start here."
+          className="mt-6"
+        />
       )}
 
       {categories.data && categories.data.length > 0 && (

@@ -4,9 +4,9 @@ import { useState, type ReactNode } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { ApiError } from '@/api/client'
 import { getOrder, type Order, type OrderStatus } from '@/api/orders'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
 import { AddressText } from '@/features/addresses/AddressText'
 import { CancelOrderDialog } from '@/features/orders/CancelOrderDialog'
 import { OrderStatusBadge } from '@/features/orders/orderStatus'
@@ -168,10 +168,7 @@ export function OrderPage() {
       return <NotFoundPage />
     }
     return (
-      <Alert variant="destructive">
-        <AlertTitle>The order could not be loaded</AlertTitle>
-        <AlertDescription>{order.error.message}</AlertDescription>
-      </Alert>
+      <QueryError title="The order could not be loaded" query={order} />
     )
   }
 

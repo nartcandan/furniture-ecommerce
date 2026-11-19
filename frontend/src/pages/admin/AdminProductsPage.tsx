@@ -2,7 +2,6 @@ import { Package, Plus, Search } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Pagination } from '@/components/Pagination'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,6 +13,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
+import { EmptyState } from '@/components/EmptyState'
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import { useAdminProducts } from '@/features/admin/products/useAdminProducts'
 import { ImagePlaceholder } from '@/features/catalog/ProductCard'
 import { formatNumber, formatPrice } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { FadeInImage } from '@/components/FadeInImage'
 
 const PAGE_SIZE = 20
 const ALL_CATEGORIES = 'all'
@@ -141,20 +143,18 @@ export function AdminProductsPage() {
       )}
 
       {products.isError && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTitle>The products could not be loaded</AlertTitle>
-          <AlertDescription>{products.error.message}</AlertDescription>
-        </Alert>
+        <QueryError title="The products could not be loaded" query={products} className="mt-4" />
       )}
 
       {products.data?.items.length === 0 && (
-        <div className="mt-4 flex flex-col items-center rounded-xl border border-dashed px-6 py-10 text-center">
-          <Package aria-hidden className="size-8 text-muted-foreground/60" strokeWidth={1.5} />
-          <p className="mt-3 font-medium">{filtered ? 'No products match' : 'No products yet'}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {filtered ? 'Try another name or category.' : 'Add the first one with “New product”.'}
-          </p>
-        </div>
+        <EmptyState
+          icon={Package}
+          title={filtered ? 'No products match' : 'No products yet'}
+          description={
+            filtered ? 'Try another name or category.' : 'Add the first one with “New product”.'
+          }
+          className="mt-4"
+        />
       )}
 
       {products.data && products.data.items.length > 0 && (
@@ -186,7 +186,11 @@ export function AdminProductsPage() {
                       <TableCell className="max-w-md pl-4">
                         <div className="flex items-center gap-3">
                           {image ? (
-                            <img src={image.url} alt="" className="size-10 shrink-0 rounded-md object-cover" />
+                            <FadeInImage
+                              src={image.url}
+                              alt=""
+                              className="size-10 shrink-0 rounded-md bg-muted object-cover"
+                            />
                           ) : (
                             <ImagePlaceholder className="size-10 shrink-0 rounded-md" />
                           )}

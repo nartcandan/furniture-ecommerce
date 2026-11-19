@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, CreditCard, RotateCcw, Truck } from 'lucide-react'
+import { ArrowRight, CreditCard, LayoutGrid, RotateCcw, Truck } from 'lucide-react'
 import { Link } from 'react-router'
 import { getProducts } from '@/api/products'
 import { HeroIllustration } from '@/components/HeroIllustration'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
+import { EmptyState } from '@/components/EmptyState'
 import { ProductCard, ProductCardSkeleton } from '@/features/catalog/ProductCard'
 import { categoryPath, useCategories } from '@/features/catalog/useCategories'
 import { cn } from '@/lib/utils'
@@ -85,14 +86,16 @@ function Categories() {
       )}
 
       {categories.isError && (
-        <Alert variant="destructive" className="mt-6">
-          <AlertTitle>The categories could not be loaded</AlertTitle>
-          <AlertDescription>{categories.error.message}</AlertDescription>
-        </Alert>
+        <QueryError title="The categories could not be loaded" query={categories} className="mt-6" />
       )}
 
       {categories.data?.length === 0 && (
-        <p className="mt-6 text-muted-foreground">No categories yet.</p>
+        <EmptyState
+          icon={LayoutGrid}
+          title="No categories yet"
+          description="The shelves are being stocked. Please come back soon."
+          className="mt-6"
+        />
       )}
 
       {categories.data && categories.data.length > 0 && (

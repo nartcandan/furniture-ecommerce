@@ -2,8 +2,9 @@ import { ReceiptText } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 import type { OrderStatus } from '@/api/orders'
 import { Pagination } from '@/components/Pagination'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
+import { EmptyState } from '@/components/EmptyState'
 import {
   Table,
   TableBody,
@@ -89,19 +90,17 @@ export function AdminOrdersPage() {
       )}
 
       {orders.isError && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTitle>The orders could not be loaded</AlertTitle>
-          <AlertDescription>{orders.error.message}</AlertDescription>
-        </Alert>
+        <QueryError title="The orders could not be loaded" query={orders} className="mt-4" />
       )}
 
       {orders.data?.items.length === 0 && (
-        <div className="mt-4 flex flex-col items-center rounded-xl border border-dashed px-6 py-10 text-center">
-          <ReceiptText aria-hidden className="size-8 text-muted-foreground/60" strokeWidth={1.5} />
-          <p className="mt-3 font-medium">
-            {status === 'Paid' ? 'Nothing to ship' : status ? 'No orders with this status' : 'No orders yet'}
-          </p>
-        </div>
+        <EmptyState
+          icon={ReceiptText}
+          title={
+            status === 'Paid' ? 'Nothing to ship' : status ? 'No orders with this status' : 'No orders yet'
+          }
+          className="mt-4"
+        />
       )}
 
       {orders.data && orders.data.items.length > 0 && (

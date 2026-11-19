@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
 import { useAdminCategories } from '@/features/admin/categories/useAdminCategories'
 import { ProductForm } from '@/features/admin/products/ProductForm'
 import { ProductImages } from '@/features/admin/products/ProductImages'
@@ -45,10 +46,14 @@ export function AdminProductPage() {
     return (
       <div>
         <BackLink />
-        <Alert variant="destructive" className="mt-4">
-          <AlertTitle>{missing ? 'This product does not exist' : 'The product could not be loaded'}</AlertTitle>
-          <AlertDescription>{missing ? 'It may have been typed wrong.' : product.error.message}</AlertDescription>
-        </Alert>
+        {missing ? (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTitle>This product does not exist</AlertTitle>
+            <AlertDescription>It may have been typed wrong.</AlertDescription>
+          </Alert>
+        ) : (
+          <QueryError title="The product could not be loaded" query={product} className="mt-4" />
+        )}
       </div>
     )
   }

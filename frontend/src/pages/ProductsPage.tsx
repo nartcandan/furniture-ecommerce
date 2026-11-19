@@ -3,8 +3,9 @@ import { SearchX } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { getProducts, type ProductSort } from '@/api/products'
 import { Pagination } from '@/components/Pagination'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { QueryError } from '@/components/QueryError'
+import { EmptyState } from '@/components/EmptyState'
 import {
   Select,
   SelectContent,
@@ -124,9 +125,12 @@ export function ProductsPage() {
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
           <p className="text-sm text-muted-foreground" aria-live="polite">
+            {/* A failed list has no count. "0 products" would read as an empty shop. */}
             {products.isPending
               ? 'Loading…'
-              : `${total} ${total === 1 ? 'product' : 'products'}`}
+              : products.isError
+                ? '\u00a0'
+                : `${total} ${total === 1 ? 'product' : 'products'}`}
             {filters.search && category && ` in ${category.name}`}
             {hasFilters && (
               <>
@@ -158,10 +162,7 @@ export function ProductsPage() {
         </div>
 
         {products.isError && (
-          <Alert variant="destructive" className="mt-6">
-            <AlertTitle>The products could not be loaded</AlertTitle>
-            <AlertDescription>{products.error.message}</AlertDescription>
-          </Alert>
+          <QueryError title="The products could not be loaded" query={products} className="mt-6" />
         )}
 
         {products.isPending && (
@@ -173,14 +174,17 @@ export function ProductsPage() {
         )}
 
         {products.data && products.data.items.length === 0 && (
-          <div className="mt-16 flex flex-col items-center text-center">
-            <SearchX aria-hidden className="size-10 text-muted-foreground/60" strokeWidth={1.5} />
-            <h2 className="mt-4 text-xl font-semibold">Nothing matches</h2>
-            <p className="mt-1 text-muted-foreground">Try another search, price range or category.</p>
-            <Button asChild variant="outline" size="lg" className="mt-6 h-10 px-5">
-              <Link to="/products">See all products</Link>
-            </Button>
-          </div>
+          <EmptyState
+            variant="page"
+            icon={SearchX}
+            title="Nothing matches"
+            description="Try another search, price range or category."
+            action={
+              <Button asChild variant="outline" size="lg" className="h-10 px-5">
+                <Link to="/products">See all products</Link>
+              </Button>
+            }
+          />
         )}
 
         {products.data && products.data.items.length > 0 && (

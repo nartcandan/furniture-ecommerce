@@ -5,6 +5,8 @@ import { getOrders } from '@/api/orders'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
+import { EmptyState } from '@/components/EmptyState'
 import { OrderStatusBadge } from '@/features/orders/orderStatus'
 import { formatDateTime, formatPrice, orderNumber } from '@/lib/format'
 
@@ -35,23 +37,21 @@ export function OrdersPage() {
       )}
 
       {orders.isError && (
-        <Alert variant="destructive" className="mt-8">
-          <AlertTitle>Your orders could not be loaded</AlertTitle>
-          <AlertDescription>{orders.error.message}</AlertDescription>
-        </Alert>
+        <QueryError title="Your orders could not be loaded" query={orders} className="mt-8" />
       )}
 
       {orders.data?.length === 0 && (
-        <div className="flex flex-col items-center py-16 text-center">
-          <span className="flex size-16 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-            <Package aria-hidden className="size-7" strokeWidth={1.5} />
-          </span>
-          <h2 className="mt-5 text-2xl font-semibold">No orders yet</h2>
-          <p className="mt-2 text-muted-foreground">Your orders will be listed here.</p>
-          <Button asChild size="lg" className="mt-8 h-11 px-6 text-base">
-            <Link to="/products">Browse products</Link>
-          </Button>
-        </div>
+        <EmptyState
+          variant="page"
+          icon={Package}
+          title="No orders yet"
+          description="Your orders will be listed here."
+          action={
+            <Button asChild size="lg" className="h-11 px-6 text-base">
+              <Link to="/products">Browse products</Link>
+            </Button>
+          }
+        />
       )}
 
       {orders.data && orders.data.length > 0 && (

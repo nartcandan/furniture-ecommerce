@@ -1,5 +1,5 @@
 import { ArrowUpRight, FolderTree, LogOut, Package, ReceiptText } from 'lucide-react'
-import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router'
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { useAuthStore, useSession } from '@/features/auth/authStore'
@@ -15,6 +15,7 @@ const sections = [
 export function AdminLayout() {
   const session = useSession()
   const clearSession = useAuthStore((state) => state.clearSession)
+  const { pathname } = useLocation()
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -69,7 +70,9 @@ export function AdminLayout() {
           </ul>
         </nav>
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8">
-          <Outlet />
+          <div key={pathname} className="motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
+            <Outlet />
+          </div>
         </main>
       </div>
       <ScrollRestoration />

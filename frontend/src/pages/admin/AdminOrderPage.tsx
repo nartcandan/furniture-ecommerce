@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
 import { AddressText } from '@/features/addresses/AddressText'
 import { useAdminOrder, useDeliverOrder, useShipOrder } from '@/features/admin/orders/useAdminOrders'
 import { OrderStatusBadge } from '@/features/orders/orderStatus'
@@ -170,10 +171,14 @@ export function AdminOrderPage() {
     return (
       <div>
         <BackLink />
-        <Alert variant="destructive" className="mt-4">
-          <AlertTitle>{missing ? 'This order does not exist' : 'The order could not be loaded'}</AlertTitle>
-          <AlertDescription>{missing ? 'It may have been typed wrong.' : order.error.message}</AlertDescription>
-        </Alert>
+        {missing ? (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTitle>This order does not exist</AlertTitle>
+            <AlertDescription>It may have been typed wrong.</AlertDescription>
+          </Alert>
+        ) : (
+          <QueryError title="The order could not be loaded" query={order} className="mt-4" />
+        )}
       </div>
     )
   }

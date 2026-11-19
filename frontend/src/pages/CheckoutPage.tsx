@@ -6,7 +6,6 @@ import type { Address } from '@/api/addresses'
 import type { Cart } from '@/api/cart'
 import { createOrder, getOrder, getOrders } from '@/api/orders'
 import { FormError } from '@/components/FormError'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -17,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QueryError } from '@/components/QueryError'
 import { AddressForm } from '@/features/addresses/AddressForm'
 import { AddressText } from '@/features/addresses/AddressText'
 import { useAddresses } from '@/features/addresses/useAddresses'
@@ -167,10 +167,7 @@ export function CheckoutPage() {
 
   if (cart.isError || addresses.isError) {
     return (
-      <Alert variant="destructive">
-        <AlertTitle>Checkout could not be loaded</AlertTitle>
-        <AlertDescription>{(cart.error ?? addresses.error)?.message}</AlertDescription>
-      </Alert>
+      <QueryError title="Checkout could not be loaded" query={[cart, addresses]} />
     )
   }
 
