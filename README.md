@@ -4,7 +4,7 @@
 
 A single-seller online store for home furniture and decoration. Customers can browse products, manage a cart, and pay by card. Admins manage the catalog, stock, and orders.
 
-> **Status:** The backend is complete. The storefront is working from end to end: browsing, the cart, checkout with payment, order history and cancellation. The admin panel is not built yet.
+> **Status:** The store works from end to end, for customers and for admins: browsing, the cart, checkout with payment, order history and cancellation, and an admin panel for the catalog, stock and orders. It is not deployed yet.
 
 ## What works
 
@@ -16,6 +16,8 @@ A single-seller online store for home furniture and decoration. Customers can br
 - **Cancellation:** the customer can cancel a paid order on the day of payment and gets a refund, and can give up an order that is still waiting for payment.
 - **Admin orders:** listing, and marking orders as shipped and delivered.
 - **Background job:** closes orders that were never paid and finishes refunds that got no answer.
+- **Storefront:** home page, product list with search and filters, product pages, cart, checkout with saved addresses, order pages with payment and cancellation, and an account page for addresses.
+- **Admin panel:** orders to ship and deliver, products with images and stock, and categories.
 
 ## Tech stack
 
@@ -83,6 +85,16 @@ npm run dev
 ```
 
 The store opens at `http://localhost:5173`. The API accepts browser requests only from this address (`Frontend:BaseUrl` in `appsettings.json`), so the dev server does not move to another port if this one is taken.
+
+The frontend calls the API at `http://localhost:5068`. To use another address, copy `frontend/.env.example` to `frontend/.env.local` and change `VITE_API_URL`.
+
+### Admin panel
+
+Sign in with the admin account from step 3 of the API setup, then choose **Admin panel** in the account menu, or open `http://localhost:5173/admin`. Other users see a "page not found" message there, and the API checks the admin role on every request.
+
+- **Orders:** filter by status ("To ship" lists the paid orders), open an order, and mark it as shipped and then delivered. Each step asks for confirmation, because it cannot be undone from the panel.
+- **Products:** create, edit and deactivate products, upload up to 10 images (JPEG, PNG or WebP, at most 5 MB each) and choose their order, and add to or take from the stock. A deactivated product is hidden from the store and kept for past orders.
+- **Categories:** create, rename and deactivate categories. Only a category that never held a product can be deleted.
 
 ## Using the API
 
