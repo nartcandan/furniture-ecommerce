@@ -4,18 +4,26 @@ using FurnitureEcommerce.Api.OpenApi;
 using FurnitureEcommerce.Application;
 using FurnitureEcommerce.Infrastructure;
 using FurnitureEcommerce.Infrastructure.Identity;
+using FurnitureEcommerce.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
+// The browser tests run the API in this environment, with a database of their own and a test payment page.
+var isE2E = builder.Environment.IsEnvironment("E2E");
+
+// The E2E environment keeps its uploads apart, so test images never mix with the ones of development.
+var uploadsPath = Path.Combine(
+    builder.Environment.ContentRootPath,
+    builder.Configuration["FileStorage:Directory"] ?? Path.Combine("wwwroot", "uploads"));
 Directory.CreateDirectory(uploadsPath);
 
 // Add services to the container.
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration, uploadsPath);
+builder.Services.AddInfrastructure(builder.Configuration, uploadsPath, allowTestPayments: isE2E);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // The tests turn this off and run the reconciliation themselves, at the moment they choose.
@@ -52,6 +60,12 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    // The E2E database starts empty for every run, so it is created here. Elsewhere migrations are a deploy step.
+    if (isE2E)
+    {
+        await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
+    }
+
     await scope.ServiceProvider.GetRequiredService<AdminSeeder>().SeedAsync();
 }
 

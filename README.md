@@ -198,4 +198,23 @@ Docker must be running. The integration tests start their own temporary PostgreS
 
 Several tests send requests at the same moment against the real database to check the cases that matter most in a store: two customers buying the last item, a double click on the pay button, a payment callback that arrives several times, and a cancellation that races with a shipment.
 
-GitHub Actions builds the backend and runs the same tests on every push to `main` and on every pull request.
+### Frontend tests
+
+From the `frontend` folder:
+
+```shell
+npm test           # unit tests for filters, form rules, error messages and formatting
+npm run test:e2e   # browser tests of the main flows
+```
+
+The browser tests need Docker and the .NET SDK, and the first time `npx playwright install chromium`. They start everything they need and stop it afterwards:
+
+- a fresh PostgreSQL on port `5434` (`docker-compose.e2e.yml`), empty on every run,
+- the API in its `E2E` environment on port `5069` (`appsettings.E2E.json`),
+- the built store on port `5174`.
+
+So they run next to a development setup without touching it. In the `E2E` environment a test payment page takes the place of iyzico, so a whole purchase can be tested, including a declined card and a refund. The API refuses to start with that test payment provider in any other environment.
+
+The tests cover registration and sign-in, buying and paying, a declined card, returning to an unpaid order, a same-day cancellation with a refund, and the admin panel: creating a category and a product with images and stock, shipping and delivering an order, and hiding the panel from customers.
+
+GitHub Actions runs the backend tests, the frontend lint, unit tests and build, and the browser tests on every push to `main` and on every pull request.

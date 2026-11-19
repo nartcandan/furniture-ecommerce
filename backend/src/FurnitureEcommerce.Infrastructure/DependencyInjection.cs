@@ -25,10 +25,15 @@ namespace FurnitureEcommerce.Infrastructure;
 
 public static class DependencyInjection
 {
+    /// <param name="allowTestPayments">
+    /// True only in the E2E environment. Elsewhere asking for the test payment provider stops the API,
+    /// so a wrong setting can never put a store online that takes orders without taking money.
+    /// </param>
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration,
-        string uploadsPath)
+        string uploadsPath,
+        bool allowTestPayments = false)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
@@ -86,12 +91,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
-        var iyzicoOptions = configuration.GetSection(IyzicoOptions.SectionName).Get<IyzicoOptions>()
-            ?? throw new InvalidOperationException("'Iyzico' settings are not configured.");
-        iyzicoOptions.Validate();
-
-        services.AddSingleton(iyzicoOptions);
-        services.AddSingleton<IPaymentGateway, IyzicoPaymentGateway>();
+        AddPaymentGateway(services, configuration, allowTestPayments);
         services.AddSingleton(new PaymentSettings(
             configuration["Payments:CallbackUrl"]
                 ?? throw new InvalidOperationException("'Payments:CallbackUrl' is not configured."),
@@ -118,5 +118,41 @@ public static class DependencyInjection
             provider.GetRequiredService<ILogger<LocalFileStorage>>()));
 
         return services;
+    }
+
+    public const string IyzicoProvider = "Iyzico";
+    public const string TestProvider = "Test";
+
+    private static void AddPaymentGateway(
+        IServiceCollection services,
+        IConfiguration configuration,
+        bool allowTestPayments)
+    {
+        var provider = configuration["Payments:Provider"] ?? IyzicoProvider;
+
+        if (provider == TestProvider)
+        {
+            if (!allowTestPayments)
+            {
+                throw new InvalidOperationException(
+                    "The test payment provider is only allowed in the E2E environment. Set 'Payments:Provider' to 'Iyzico'.");
+            }
+
+            services.AddSingleton<TestPaymentGateway>();
+            services.AddSingleton<IPaymentGateway>(serviceProvider => serviceProvider.GetRequiredService<TestPaymentGateway>());
+            return;
+        }
+
+        if (provider != IyzicoProvider)
+        {
+            throw new InvalidOperationException($"'Payments:Provider' must be '{IyzicoProvider}' or '{TestProvider}'.");
+        }
+
+        var iyzicoOptions = configuration.GetSection(IyzicoOptions.SectionName).Get<IyzicoOptions>()
+            ?? throw new InvalidOperationException("'Iyzico' settings are not configured.");
+        iyzicoOptions.Validate();
+
+        services.AddSingleton(iyzicoOptions);
+        services.AddSingleton<IPaymentGateway, IyzicoPaymentGateway>();
     }
 }
