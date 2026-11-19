@@ -7,15 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { formatNumber } from '@/lib/format'
 import { errorMessage } from '@/lib/formErrors'
+import { readStockChange } from './stockChange'
 import { useAdjustStock } from './useAdminProducts'
-
-/** Reads `+5`, `5` or `-2`. Anything else, and zero, is `null`. */
-function readChange(text: string): number | null {
-  const match = /^([+-]?)(\d{1,7})$/.exec(text.trim())
-  if (!match) return null
-  const change = Number(match[2]) * (match[1] === '-' ? -1 : 1)
-  return change === 0 || Math.abs(change) > 1_000_000 ? null : change
-}
 
 /**
  * Stock is changed by an amount, not set to a number. The API adds it in one statement, so an order placed
@@ -27,7 +20,7 @@ export function StockPanel({ product }: { product: Product }) {
   const hintId = useId()
   const [text, setText] = useState('')
   const [error, setError] = useState<string>()
-  const change = readChange(text)
+  const change = readStockChange(text)
   const newStock = change === null ? null : product.stockQuantity + change
 
   function handleSubmit(event: FormEvent) {

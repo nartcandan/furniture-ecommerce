@@ -67,3 +67,37 @@ jobs:
           name: test-results
           path: backend/TestResults
           if-no-files-found: ignore
+
+  frontend:
+    name: Frontend lint, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Unit tests for the rules that need no browser: filters, form numbers, error messages, formatting.
+      - name: Test
+        run: npm test
+
+      # Type-checks the whole app, then bundles it.
+      - name: Build
+        run: npm run build
