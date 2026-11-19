@@ -74,6 +74,18 @@ The API runs at `http://localhost:5068`, and the interactive API reference is at
 
 To stop PostgreSQL, run `docker compose down` from the project root. Your data is kept.
 
+### Demo catalog
+
+An empty store can be filled with 6 categories and 42 products, each with two photos. With the API running, from the project root:
+
+```shell
+ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=YOUR_ADMIN_PASSWORD node seed/seed.mjs
+```
+
+The script creates everything through the admin API, so the data passes the same checks as the admin panel, and downloads the photos while it runs. Products that already exist by name are skipped, so it can be run again after a failure. The catalog is in `seed/catalog.json`.
+
+The product names, descriptions, sizes and prices are made up for this store. The photos come from [Unsplash](https://unsplash.com/license) and [Pexels](https://www.pexels.com/license/), both free to use, and show similar products rather than these exact ones. Each photo's id is in `catalog.json`, and its page with the photographer is `unsplash.com/photos/{id}` or `pexels.com/photo/{id}`.
+
 ## Running the frontend locally
 
 You need [Node.js](https://nodejs.org) 22.12 or newer, and the API running as described above.

@@ -1,0 +1,377 @@
+{
+  "$comment": "The demo catalog. Names, descriptions, sizes and prices are made up for this store. Each photo is from Unsplash or Pexels, free to use under their licenses, and shows a similar product rather than this exact one. 'u:' is an Unsplash photo id, 'p:' a Pexels photo id.",
+  "categories": [
+    {
+      "name": "Living Room",
+      "description": "Sofas, armchairs and tables for the room where everyone gathers.",
+      "products": [
+        {
+          "name": "Haven Corner Sofa",
+          "description": "A deep L-shaped sofa with loose back cushions and a chaise on the left. The removable cover is a soft woven fabric that can be dry-cleaned.",
+          "price": 42999.90, "stock": 6,
+          "widthCm": 268, "depthCm": 168, "heightCm": 84, "weightKg": 74,
+          "material": "Woven polyester, pine frame", "color": "Ivory",
+          "photos": ["p:7160605", "p:30380638"]
+        },
+        {
+          "name": "Fjell Armchair",
+          "description": "A compact armchair with a high back, button tufting and tapered oak legs. Small enough for a reading corner, firm enough to sit in for hours.",
+          "price": 11499.90, "stock": 14,
+          "widthCm": 78, "depthCm": 82, "heightCm": 92, "weightKg": 17.5,
+          "material": "Polyester blend, solid oak legs", "color": "Stone grey",
+          "photos": ["u:Onyw32UMHKg", "p:6707628"]
+        },
+        {
+          "name": "Velour Three-Seat Sofa",
+          "description": "A low, generous sofa in deep green velvet with feather-wrapped seat cushions. The velvet has a light sheen that changes with the light.",
+          "price": 36999.90, "stock": 4,
+          "widthCm": 224, "depthCm": 96, "heightCm": 78, "weightKg": 61,
+          "material": "Cotton velvet, beech frame", "color": "Forest green",
+          "photos": ["p:5824901", "p:6580416"]
+        },
+        {
+          "name": "Arbor Coffee Table",
+          "description": "A rectangular coffee table in solid oak with rounded corners and a lower shelf for books and magazines. Finished with a hard-wearing natural oil.",
+          "price": 7999.90, "stock": 18,
+          "widthCm": 120, "depthCm": 60, "heightCm": 42, "weightKg": 21,
+          "material": "Solid oak", "color": "Natural oak",
+          "photos": ["u:hfCS5un07f8", "p:19966793"]
+        },
+        {
+          "name": "Linea TV Bench",
+          "description": "A long, low bench for a TV and speakers, with splayed solid wood legs and a cable opening at the back.",
+          "price": 9499.90, "stock": 9,
+          "widthCm": 180, "depthCm": 40, "heightCm": 48, "weightKg": 26,
+          "material": "Oak veneer, solid oak legs", "color": "Light oak",
+          "photos": ["p:6020432", "u:_M9JQTILVOU"]
+        },
+        {
+          "name": "Sol Cane Lounge Chair",
+          "description": "A low lounge chair with a woven cane seat and back on a solid beech frame. Light to move, and pairs well with a sheepskin.",
+          "price": 8499.90, "stock": 3,
+          "widthCm": 66, "depthCm": 80, "heightCm": 74, "weightKg": 8.5,
+          "material": "Rattan cane, solid beech", "color": "Natural",
+          "photos": ["p:8989497", "p:30059653"]
+        },
+        {
+          "name": "Orbit Side Table",
+          "description": "A round side table for a cup, a lamp or a plant, with a lipped top that keeps things from sliding off.",
+          "price": 3299.90, "stock": 22,
+          "widthCm": 45, "depthCm": 45, "heightCm": 52, "weightKg": 5.5,
+          "material": "Walnut veneer, powder-coated steel", "color": "Walnut",
+          "photos": ["p:1444424", "u:cpEO3HoKdKM"]
+        }
+      ]
+    },
+    {
+      "name": "Bedroom",
+      "description": "Beds, bedside tables and storage for a calm bedroom.",
+      "products": [
+        {
+          "name": "Nord Pine Bed Frame",
+          "description": "A low platform bed in solid pine with a slatted base, so no box spring is needed. Fits a 160 × 200 cm mattress.",
+          "price": 18999.90, "stock": 7,
+          "widthCm": 168, "depthCm": 210, "heightCm": 38, "weightKg": 48,
+          "material": "Solid pine", "color": "Natural pine",
+          "photos": ["u:gVKmonDbotU", "p:3935353"]
+        },
+        {
+          "name": "Cove Upholstered Bed",
+          "description": "A padded bed with a tall headboard you can lean against to read. The fabric is a soft, durable weave. Fits a 160 × 200 cm mattress.",
+          "price": 27499.90, "stock": 5,
+          "widthCm": 176, "depthCm": 218, "heightCm": 112, "weightKg": 63,
+          "material": "Polyester weave, engineered wood frame", "color": "Camel",
+          "photos": ["p:6758770", "p:4177628"]
+        },
+        {
+          "name": "Pia Bedside Table",
+          "description": "A small bedside table with two drawers that glide shut quietly. Wide enough for a lamp, a book and a glass of water.",
+          "price": 3499.90, "stock": 26,
+          "widthCm": 46, "depthCm": 38, "heightCm": 58, "weightKg": 11,
+          "material": "Painted solid pine", "color": "White",
+          "photos": ["u:ym5zyvzSwqI", "u:PhwbTwdZ3f4"]
+        },
+        {
+          "name": "Heritage Chest of Drawers",
+          "description": "A chest of four deep drawers in walnut veneer with brass-finish handles. The drawers run on full-extension runners.",
+          "price": 14999.90, "stock": 6,
+          "widthCm": 90, "depthCm": 48, "heightCm": 102, "weightKg": 44,
+          "material": "Walnut veneer, solid wood frame", "color": "Dark walnut",
+          "photos": ["p:5825540", "p:10397037"]
+        },
+        {
+          "name": "Washed Linen Duvet Set",
+          "description": "A duvet cover and two pillowcases in stone-washed linen that gets softer with every wash. Double size: 200 × 220 cm cover, 50 × 70 cm pillowcases.",
+          "price": 2899.90, "stock": 40,
+          "widthCm": null, "depthCm": null, "heightCm": null, "weightKg": 1.6,
+          "material": "100% linen", "color": "White",
+          "photos": ["p:3030684", "p:8793483"]
+        },
+        {
+          "name": "Aura Floor Mirror",
+          "description": "A full-length mirror that leans against the wall. Comes with a safety strap to fix it to the wall.",
+          "price": 4299.90, "stock": 11,
+          "widthCm": 55, "depthCm": 3, "heightCm": 170, "weightKg": 13,
+          "material": "Glass, metal frame", "color": "Brushed gold",
+          "photos": ["p:4740487", "p:5825571"]
+        },
+        {
+          "name": "Modu Wardrobe",
+          "description": "A two-door wardrobe with a hanging rail and adjustable shelves inside. Add more units side by side as your storage grows.",
+          "price": 21999.90, "stock": 0,
+          "widthCm": 100, "depthCm": 58, "heightCm": 220, "weightKg": 96,
+          "material": "Painted engineered wood", "color": "Warm beige",
+          "photos": ["p:7005283", "p:6580395"]
+        }
+      ]
+    },
+    {
+      "name": "Kitchen & Dining",
+      "description": "Tables, chairs and the things that make a meal.",
+      "products": [
+        {
+          "name": "Lund Dining Table",
+          "description": "A solid oak dining table that seats six. The oiled top shows the grain of the wood and can be sanded and re-oiled over the years.",
+          "price": 21999.90, "stock": 5,
+          "widthCm": 180, "depthCm": 90, "heightCm": 75, "weightKg": 52,
+          "material": "Solid oak", "color": "Natural oak",
+          "photos": ["p:8113036", "u:aXJkDfOVfyE"]
+        },
+        {
+          "name": "Bistro Rattan Chair",
+          "description": "A classic bistro chair with a bent wood frame and a woven rattan seat and back. Light, sturdy and comfortable for long dinners.",
+          "price": 3799.90, "stock": 32,
+          "widthCm": 46, "depthCm": 52, "heightCm": 86, "weightKg": 4.8,
+          "material": "Bent beech, rattan", "color": "Honey",
+          "photos": ["u:u93J0YPyAjU", "u:WQhZgpA0ni0"]
+        },
+        {
+          "name": "Tulip Round Dining Table",
+          "description": "A round table for four on a single pedestal, so no table legs get in the way of anyone's knees.",
+          "price": 13499.90, "stock": 8,
+          "widthCm": 110, "depthCm": 110, "heightCm": 74, "weightKg": 29,
+          "material": "Lacquered MDF, steel base", "color": "White",
+          "photos": ["u:CswKfD546Z8", "u:DYlnqMbIN7o"]
+        },
+        {
+          "name": "Wire Counter Stool",
+          "description": "A counter-height stool in welded steel wire with a footrest. Stacks for storage.",
+          "price": 2699.90, "stock": 24,
+          "widthCm": 42, "depthCm": 42, "heightCm": 65, "weightKg": 5.2,
+          "material": "Powder-coated steel", "color": "Silver",
+          "photos": ["p:279648", "u:lE7pmNZZ3Fw"]
+        },
+        {
+          "name": "Terra Stoneware Dinner Set",
+          "description": "A 16-piece set for four: dinner plates, side plates, bowls and mugs in reactive-glaze stoneware. Safe for the dishwasher and the microwave.",
+          "price": 3199.90, "stock": 35,
+          "widthCm": null, "depthCm": null, "heightCm": null, "weightKg": 9.4,
+          "material": "Stoneware", "color": "Grey and white",
+          "photos": ["u:FHtP6sKF7bY", "p:8251778"]
+        },
+        {
+          "name": "Ash Wall Shelf",
+          "description": "A solid wood shelf with hidden brackets for spices, jars and cookbooks. Each shelf holds up to 15 kg when fixed to a solid wall.",
+          "price": 1199.90, "stock": 45,
+          "widthCm": 80, "depthCm": 22, "heightCm": 3, "weightKg": 2.4,
+          "material": "Solid ash", "color": "Natural",
+          "photos": ["p:6654122", "p:5490824"]
+        },
+        {
+          "name": "Clip-Top Storage Jars",
+          "description": "Four glass jars with clip lids and rubber seals that keep flour, pasta and spices fresh. 0.5, 1, 1.5 and 2 litres.",
+          "price": 899.90, "stock": 60,
+          "widthCm": null, "depthCm": null, "heightCm": null, "weightKg": 3.1,
+          "material": "Glass, steel, rubber", "color": "Clear",
+          "photos": ["p:458796", "p:3847450"]
+        }
+      ]
+    },
+    {
+      "name": "Workspace",
+      "description": "Desks, chairs and storage for working from home.",
+      "products": [
+        {
+          "name": "Atlas Writing Desk",
+          "description": "A simple solid wood desk with room for a laptop and a notebook, and a slim drawer for chargers and pens.",
+          "price": 7999.90, "stock": 12,
+          "widthCm": 120, "depthCm": 60, "heightCm": 75, "weightKg": 24,
+          "material": "Solid pine, oak veneer top", "color": "Honey",
+          "photos": ["p:28668434", "p:263209"]
+        },
+        {
+          "name": "Rise Electric Standing Desk",
+          "description": "A sit-stand desk with two quiet motors and three height memories. Moves between 72 and 120 cm in about 20 seconds.",
+          "price": 18999.90, "stock": 7,
+          "widthCm": 140, "depthCm": 70, "heightCm": 120, "weightKg": 38,
+          "material": "Steel frame, laminate top", "color": "White and black",
+          "photos": ["p:8001034", "p:8001041"]
+        },
+        {
+          "name": "Walnut Computer Desk",
+          "description": "A wide desk in walnut veneer for two monitors, with a cable tray under the back edge to keep wires out of sight.",
+          "price": 12999.90, "stock": 4,
+          "widthCm": 160, "depthCm": 70, "heightCm": 74, "weightKg": 35,
+          "material": "Walnut veneer, steel legs", "color": "Walnut",
+          "photos": ["p:12470765", "p:12786598"]
+        },
+        {
+          "name": "Ergo Mesh Office Chair",
+          "description": "A breathable mesh chair with adjustable lumbar support, a headrest, 3D armrests and seat depth adjustment.",
+          "price": 10999.90, "stock": 15,
+          "widthCm": 68, "depthCm": 64, "heightCm": 128, "weightKg": 19,
+          "material": "Mesh, nylon base", "color": "Black",
+          "photos": ["p:31236091", "p:19053243"]
+        },
+        {
+          "name": "Shell Desk Chair",
+          "description": "A moulded chair with a padded seat on solid beech legs. Works at a desk or around a dining table.",
+          "price": 2999.90, "stock": 28,
+          "widthCm": 48, "depthCm": 52, "heightCm": 82, "weightKg": 5.6,
+          "material": "Polypropylene, solid beech", "color": "Black",
+          "photos": ["u:ljRiZl00n18", "p:16446858"]
+        },
+        {
+          "name": "Track Wall Shelving",
+          "description": "Wall rails with adjustable brackets and shelves. Move the shelves up and down as your storage needs change.",
+          "price": 3999.90, "stock": 19,
+          "widthCm": 120, "depthCm": 30, "heightCm": 150, "weightKg": 14,
+          "material": "Steel, white-painted wood", "color": "White",
+          "photos": ["p:10099173", "p:10099172"]
+        },
+        {
+          "name": "Curve Office Cabinet",
+          "description": "A walnut cabinet with rounded sides and a soft-close door. Holds files, a printer and everything else that clutters a desk.",
+          "price": 11999.90, "stock": 3,
+          "widthCm": 90, "depthCm": 45, "heightCm": 110, "weightKg": 39,
+          "material": "Walnut veneer", "color": "Walnut",
+          "photos": ["p:6758240", "p:245219"]
+        }
+      ]
+    },
+    {
+      "name": "Lighting",
+      "description": "Floor, table and ceiling lamps for warm light in every room.",
+      "products": [
+        {
+          "name": "Tripod Floor Lamp",
+          "description": "A floor lamp on three wooden legs with a fabric drum shade that spreads a soft, even light.",
+          "price": 3999.90, "stock": 16,
+          "widthCm": 50, "depthCm": 50, "heightCm": 152, "weightKg": 4.2,
+          "material": "Solid wood, cotton shade", "color": "Natural and white",
+          "photos": ["u:5R09Up-ShvE", "u:bUwWDtl5oiY"]
+        },
+        {
+          "name": "Brass Task Lamp",
+          "description": "A table lamp in brushed brass with a tilting dome shade. Directs light onto a desk or a bedside book.",
+          "price": 2799.90, "stock": 21,
+          "widthCm": 18, "depthCm": 25, "heightCm": 45, "weightKg": 1.9,
+          "material": "Brass-plated steel", "color": "Brass",
+          "photos": ["u:dN0f5oGLPr0", "u:2SB64CXAHCM"]
+        },
+        {
+          "name": "Rattan Pendant Lamp",
+          "description": "A hand-woven rattan shade that casts patterned shadows on walls and ceiling. Hang a few at different heights over a table.",
+          "price": 2499.90, "stock": 13,
+          "widthCm": 45, "depthCm": 45, "heightCm": 32, "weightKg": 1.1,
+          "material": "Rattan", "color": "Natural",
+          "photos": ["p:34941015", "p:37436378"]
+        },
+        {
+          "name": "Swing-Arm Desk Lamp",
+          "description": "A classic spring-balanced desk lamp. The arm and head move freely and stay exactly where you leave them.",
+          "price": 1899.90, "stock": 30,
+          "widthCm": 15, "depthCm": 45, "heightCm": 60, "weightKg": 2.3,
+          "material": "Steel", "color": "Black",
+          "photos": ["u:fOgLNspEm5I", "p:9413790"]
+        },
+        {
+          "name": "Clear Globe Pendant",
+          "description": "A mouth-blown clear glass globe on a fabric cord. Looks best with a warm filament bulb.",
+          "price": 2199.90, "stock": 17,
+          "widthCm": 25, "depthCm": 25, "heightCm": 25, "weightKg": 1.4,
+          "material": "Mouth-blown glass", "color": "Clear",
+          "photos": ["p:7518747", "p:30805979"]
+        },
+        {
+          "name": "Arc Floor Lamp",
+          "description": "A long arched floor lamp that reaches over a sofa or a reading chair, on a heavy base that keeps it steady.",
+          "price": 5999.90, "stock": 8,
+          "widthCm": 35, "depthCm": 150, "heightCm": 190, "weightKg": 16,
+          "material": "Steel, marble base", "color": "Black",
+          "photos": ["u:FV3GConVSss", "p:14677290"]
+        },
+        {
+          "name": "Drum Shade Floor Lamp",
+          "description": "A slim floor lamp with a wide linen drum shade, for a gentle light beside a sofa or in a bedroom corner.",
+          "price": 3499.90, "stock": 2,
+          "widthCm": 45, "depthCm": 45, "heightCm": 160, "weightKg": 5.8,
+          "material": "Steel, linen shade", "color": "Blush",
+          "photos": ["p:2876787", "p:1571471"]
+        }
+      ]
+    },
+    {
+      "name": "Storage",
+      "description": "Shelves, cabinets and baskets that keep things in their place.",
+      "products": [
+        {
+          "name": "Shelf Bookcase",
+          "description": "A tall open bookcase with five shelves, deep enough for large books and records. Can be fixed to the wall for safety.",
+          "price": 6999.90, "stock": 10,
+          "widthCm": 100, "depthCm": 35, "heightCm": 190, "weightKg": 42,
+          "material": "Solid pine", "color": "Honey",
+          "photos": ["p:2943603", "p:2898170"]
+        },
+        {
+          "name": "Mid Sideboard",
+          "description": "A low sideboard with sliding doors and adjustable shelves for tableware, records or games.",
+          "price": 15999.90, "stock": 5,
+          "widthCm": 150, "depthCm": 45, "heightCm": 72, "weightKg": 47,
+          "material": "Walnut veneer, solid oak legs", "color": "Walnut",
+          "photos": ["p:6963787", "u:OufPLukHBoE"]
+        },
+        {
+          "name": "Cube Shelf Unit",
+          "description": "A shelf unit of eight open cubes. Use it as a bookcase or a room divider, or add baskets to hide the clutter.",
+          "price": 4999.90, "stock": 20,
+          "widthCm": 77, "depthCm": 39, "heightCm": 147, "weightKg": 30,
+          "material": "Engineered wood", "color": "White",
+          "photos": ["p:8581052", "u:i0LcODk-V1Q"]
+        },
+        {
+          "name": "Woven Seagrass Baskets",
+          "description": "A set of two hand-woven seagrass baskets with handles, for blankets, toys or laundry.",
+          "price": 999.90, "stock": 48,
+          "widthCm": 40, "depthCm": 40, "heightCm": 38, "weightKg": 1.8,
+          "material": "Seagrass", "color": "Natural",
+          "photos": ["p:8058762", "p:8581061"]
+        },
+        {
+          "name": "Hallway Storage Bench",
+          "description": "A bench to sit on while putting on shoes, with space underneath for shoes or baskets.",
+          "price": 4499.90, "stock": 12,
+          "widthCm": 100, "depthCm": 38, "heightCm": 48, "weightKg": 17,
+          "material": "Painted engineered wood, cushion", "color": "White and grey",
+          "photos": ["p:9457270", "p:6312075"]
+        },
+        {
+          "name": "Coat Hook Rail",
+          "description": "A wall rail with five sturdy hooks for coats, bags and hats.",
+          "price": 799.90, "stock": 55,
+          "widthCm": 60, "depthCm": 8, "heightCm": 10, "weightKg": 1.2,
+          "material": "Powder-coated steel", "color": "Black",
+          "photos": ["p:7790205", "p:4846383"]
+        },
+        {
+          "name": "Bamboo Plant Stand",
+          "description": "A tiered stand for plants on three levels, so even a small corner can hold a small garden.",
+          "price": 1499.90, "stock": 23,
+          "widthCm": 40, "depthCm": 30, "heightCm": 110, "weightKg": 3.5,
+          "material": "Bamboo", "color": "Natural",
+          "photos": ["p:3952029", "p:20551647"]
+        }
+      ]
+    }
+  ]
+}
