@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, Package, ShoppingBag, User } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, LogOut, Package, ShoppingBag, User } from 'lucide-react'
 import { Link, NavLink, useSearchParams } from 'react-router'
 import { Logo } from '@/components/Logo'
 import { SearchBox } from '@/components/SearchBox'
@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useAuthStore, useSession } from '@/features/auth/authStore'
+import { useAuthStore, useIsAdmin, useSession } from '@/features/auth/authStore'
 import { useCart } from '@/features/cart/useCart'
 import { categoryPath, useCategories } from '@/features/catalog/useCategories'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 function AccountMenu() {
   const session = useSession()
   const clearSession = useAuthStore((state) => state.clearSession)
+  const isAdmin = useIsAdmin()
 
   if (!session) {
     return (
@@ -52,6 +53,14 @@ function AccountMenu() {
           <span className="block truncate text-xs font-normal text-muted-foreground">{email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link to="/admin">
+              <LayoutDashboard aria-hidden />
+              Admin panel
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link to="/account">
             <User aria-hidden />

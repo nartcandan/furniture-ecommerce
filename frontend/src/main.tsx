@@ -1,12 +1,14 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
+import { AdminLayout } from '@/components/AdminLayout'
 import { Layout } from '@/components/Layout'
 import { Toaster } from '@/components/ui/sonner'
-import { GuestOnly, RequireAuth } from '@/features/auth/RouteGuards'
+import { GuestOnly, RequireAdmin, RequireAuth } from '@/features/auth/RouteGuards'
 import { queryClient } from '@/lib/queryClient'
 import { AccountPage } from '@/pages/AccountPage'
+import { AdminCategoriesPage } from '@/pages/admin/AdminCategoriesPage'
 import { CartPage } from '@/pages/CartPage'
 import { CheckoutPage } from '@/pages/CheckoutPage'
 import { HomePage } from '@/pages/HomePage'
@@ -44,6 +46,19 @@ const router = createBrowserRouter([
         ],
       },
       { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+  {
+    element: <RequireAdmin />,
+    children: [
+      {
+        path: '/admin',
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <Navigate to="/admin/categories" replace /> },
+          { path: 'categories', element: <AdminCategoriesPage /> },
+        ],
+      },
     ],
   },
 ])
