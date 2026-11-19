@@ -120,6 +120,20 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 
 Tokens are valid for one hour. After that, log in again. An account is locked for five minutes after five failed login attempts.
 
+### Errors
+
+Errors come back as [problem details](https://www.rfc-editor.org/rfc/rfc9457) with the HTTP status, a message and a `traceId`. The `traceId` finds the full error in the logs (see [Logs](#logs)). Unexpected errors never show internal details.
+
+| Status | When |
+|---|---|
+| `400` | The request is not valid. `errors` lists the messages by field. |
+| `401`, `403` | Not signed in, or not allowed. |
+| `404` | The record does not exist, or belongs to another user. |
+| `409` | The request conflicts with the current state, such as stock that ran out or an order that changed. |
+| `502` | iyzico refused or failed. |
+| `503` | The database cannot be reached. Try again after the seconds in the `Retry-After` header. |
+| `500` | Anything unexpected. |
+
 ### Cart
 
 Add a product with `POST /api/cart/items` and a body such as `{ "productId": "...", "quantity": 2 }`. Adding the same product again increases its quantity. `PUT /api/cart/items/{productId}` with `{ "quantity": 3 }` sets the quantity.

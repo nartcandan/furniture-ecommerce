@@ -14,9 +14,10 @@ public static class LoggingSetup
     private const string ReadableTemplate =
         "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} <{SourceContext}>{NewLine}{Exception}";
 
-    // Alerts carry their event name (such as ManualRefundRequired), which is what to search for.
+    // The files carry the event name (such as ManualRefundRequired) and the trace id, which is the traceId an
+    // error answer gives the client. Either one finds the full entry.
     private const string AlertTemplate =
-        "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {EventId} {Message:lj} <{SourceContext}>{NewLine}{Exception}";
+        "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {EventId} {Message:lj} <{SourceContext}> trace {TraceId}{NewLine}{Exception}";
 
     public static LoggerConfiguration WriteToOutputs(
         this LoggerConfiguration logger,
