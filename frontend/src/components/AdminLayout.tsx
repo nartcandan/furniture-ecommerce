@@ -1,12 +1,15 @@
-import { ArrowUpRight, FolderTree, LogOut } from 'lucide-react'
+import { ArrowUpRight, FolderTree, LogOut, Package } from 'lucide-react'
 import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { useAuthStore, useSession } from '@/features/auth/authStore'
 import { cn } from '@/lib/utils'
 
-// Products and orders join this list in their own steps.
-const sections = [{ to: '/admin/categories', label: 'Categories', icon: FolderTree }]
+// Orders join this list in their own step.
+const sections = [
+  { to: '/admin/products', label: 'Products', icon: Package },
+  { to: '/admin/categories', label: 'Categories', icon: FolderTree },
+]
 
 /** The admin panel's frame: a slim header and the section list, without the store's header and footer. */
 export function AdminLayout() {

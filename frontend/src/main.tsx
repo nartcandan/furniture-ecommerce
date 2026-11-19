@@ -9,6 +9,9 @@ import { GuestOnly, RequireAdmin, RequireAuth } from '@/features/auth/RouteGuard
 import { queryClient } from '@/lib/queryClient'
 import { AccountPage } from '@/pages/AccountPage'
 import { AdminCategoriesPage } from '@/pages/admin/AdminCategoriesPage'
+import { AdminNewProductPage } from '@/pages/admin/AdminNewProductPage'
+import { AdminProductPage } from '@/pages/admin/AdminProductPage'
+import { AdminProductsPage } from '@/pages/admin/AdminProductsPage'
 import { CartPage } from '@/pages/CartPage'
 import { CheckoutPage } from '@/pages/CheckoutPage'
 import { HomePage } from '@/pages/HomePage'
@@ -55,8 +58,11 @@ const router = createBrowserRouter([
         path: '/admin',
         element: <AdminLayout />,
         children: [
-          { index: true, element: <Navigate to="/admin/categories" replace /> },
+          { index: true, element: <Navigate to="/admin/products" replace /> },
           { path: 'categories', element: <AdminCategoriesPage /> },
+          { path: 'products', element: <AdminProductsPage /> },
+          { path: 'products/new', element: <AdminNewProductPage /> },
+          { path: 'products/:id', element: <AdminProductPage /> },
         ],
       },
     ],

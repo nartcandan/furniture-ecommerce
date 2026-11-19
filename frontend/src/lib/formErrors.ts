@@ -30,3 +30,15 @@ export function showApiError<T extends FieldValues>(
     })
   }
 }
+
+/**
+ * One message for an error shown outside a form. A validation error's own title says only "Validation failed",
+ * so its field messages are used instead.
+ */
+export function errorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return 'Something went wrong. Please try again.'
+  }
+  const fieldMessages = Object.values(error.fieldErrors).flat()
+  return fieldMessages.length > 0 ? fieldMessages.join(' ') : error.message
+}
